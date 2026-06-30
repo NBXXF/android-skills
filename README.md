@@ -32,6 +32,12 @@ Install from GitHub by overriding the repository URL if needed:
 XXF_ANDROID_SKILLS_REPO=https://github.com/NBXXF/android-skills.git bash install.sh codex project
 ```
 
+Install targets:
+
+- Codex project install creates symlinks in `.agents/skills` and adds a small managed block to `AGENTS.md`.
+- Claude install creates symlinks in `.claude/skills`.
+- Cursor project install copies rules to `.cursor/rules`.
+
 ## Install With XXF Library Skills
 
 This repository is the shared Android engineering rule set. XXF library-specific skills live in:
