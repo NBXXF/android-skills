@@ -11,6 +11,7 @@ skills/
   xxf-aaa-delivery-loop/
   xxf-aaa-coding-style/
   xxf-aaa-coding-arch/
+  xxf-aaa-multi-module-structure/
   xxf-aaa-test-strategy/
   ...
 install.sh
