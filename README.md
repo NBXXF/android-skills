@@ -18,23 +18,27 @@ install.sh
 
 ## Install
 
-Install the shared skills from a local checkout:
+Install the shared skills from a local checkout. Run project-scoped installs from the Android project root where the agent should discover the skills:
 
 ```bash
-bash install.sh codex project
-bash install.sh claude user
-bash install.sh cursor project
+git clone https://github.com/NBXXF/android-skills.git /path/to/android-skills
+cd /path/to/target-android-project
+
+bash /path/to/android-skills/install.sh codex project
+bash /path/to/android-skills/install.sh cursor project
 ```
 
-Install from GitHub by overriding the repository URL if needed:
+Install user-scoped Codex or Claude skills from any working directory:
 
 ```bash
-XXF_ANDROID_SKILLS_REPO=https://github.com/NBXXF/android-skills.git bash install.sh codex project
+bash /path/to/android-skills/install.sh codex user
+bash /path/to/android-skills/install.sh claude user
 ```
 
 Install targets:
 
 - Codex project install creates symlinks in `.agents/skills` and adds a small managed block to `AGENTS.md`.
+- Codex user install creates symlinks in `$HOME/.agents/skills`.
 - Claude install creates symlinks in `.claude/skills`.
 - Cursor project install copies rules to `.cursor/rules`.
 
@@ -49,14 +53,12 @@ https://github.com/NBXXF/xxf_android/tree/master/skills
 For third-party Android projects that use XXF libraries, install both repositories. The install scripts use separate Codex markers and separate caches, so they can coexist in the same `AGENTS.md`.
 
 ```bash
-git clone https://github.com/NBXXF/android-skills.git
-cd android-skills
-bash install.sh codex project
+git clone https://github.com/NBXXF/android-skills.git /path/to/android-skills
+git clone https://github.com/NBXXF/xxf_android.git /path/to/xxf_android
 
-cd ..
-git clone https://github.com/NBXXF/xxf_android.git
-cd xxf_android/skills
-bash install.sh codex project
+cd /path/to/target-android-project
+bash /path/to/android-skills/install.sh codex project
+bash /path/to/xxf_android/skills/install.sh codex project
 ```
 
 ## Codex Usage
