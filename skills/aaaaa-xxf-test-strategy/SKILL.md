@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-test-strategy
-description: 为 xxf_android 选择最小有效测试和 Gradle 验证范围。用于 Kotlin、Java 转 Kotlin、Android 资源或 Gradle 改动后的验证决策。
+description: 为 Android 项目选择最小有效测试和 Gradle 验证范围。用于 Kotlin、Java 转 Kotlin、Android 资源或 Gradle 改动后的验证决策。
 ---
 
 # 测试与验证策略

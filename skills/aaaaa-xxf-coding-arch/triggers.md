@@ -19,7 +19,7 @@
 - "新增一个 Android library 模块的 Gradle 怎么写" → 应走 `aaaaa-xxf-module-scaffold`
 - "这个功能最小要测哪些" → 应走 `aaaaa-xxf-test-strategy`
 - "帮我 review 这次改动" → 应走 `aaaaa-xxf-code-reviewer`
-- "某个 XXF 库 API 怎么用" → 应走对应模块 skill
+- "某个库 API 怎么用" → 应走对应模块 skill
 
 ## 边界用例
 

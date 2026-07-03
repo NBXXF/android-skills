@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-model-naming-guidelines
-description: xxf_android 领域模型命名规范。用于 VO、DTO、PO、DO、BO、Entity 等分层模型命名与职责划分。
+description: Android 项目领域模型命名规范。用于 VO、DTO、PO、DO、BO、Entity 等分层模型命名与职责划分。
 ---
 
 # 模型命名规则

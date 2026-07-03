@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-module-scaffold
-description: 为 xxf_android 新增或拆分 Android library/app/demo 模块时使用。覆盖 settings.gradle、build.gradle、发布配置、聚合 libs 和 demo 验证约定。
+description: 为 Android 项目新增或拆分 Android library/app/demo 模块时使用。覆盖 settings.gradle、build.gradle、发布配置、聚合 libs 和 demo 验证约定。
 ---
 
 # Android 模块脚手架

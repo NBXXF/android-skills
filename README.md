@@ -43,23 +43,23 @@ Install targets:
 - Claude install creates symlinks in `.claude/skills`.
 - Cursor project install copies rules to `.cursor/rules`.
 
-## Install With XXF Library Skills
+## Install With Library Skills
 
-This repository is the shared Android engineering rule set. XXF library-specific skills live in:
+This repository is the shared Android engineering rule set. Library-specific skills should live in the corresponding library repository:
 
 ```text
-https://github.com/NBXXF/xxf_android/tree/master/skills
+https://github.com/<owner>/<library-repo>/tree/<branch>/skills
 ```
 
-For third-party Android projects that use XXF libraries, install both repositories. The install scripts use separate Codex markers and separate caches, so they can coexist in the same `AGENTS.md`.
+For Android projects that use additional library skills, install both repositories. The install scripts use separate Codex markers and separate caches, so they can coexist in the same `AGENTS.md`.
 
 ```bash
 git clone https://github.com/NBXXF/android-skills.git /path/to/android-skills
-git clone https://github.com/NBXXF/xxf_android.git /path/to/xxf_android
+git clone https://github.com/<owner>/<library-repo>.git /path/to/library-repo
 
 cd /path/to/target-android-project
 bash /path/to/android-skills/install.sh codex project
-bash /path/to/xxf_android/skills/install.sh codex project
+bash /path/to/library-repo/skills/install.sh codex project
 ```
 
 ## Codex Usage

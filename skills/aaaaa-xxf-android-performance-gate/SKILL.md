@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-android-performance-gate
-description: xxf_android 性能风险门禁。用于 UI 渲染、RecyclerView、图片、启动、主线程、下载/网络热路径、数据库和大文件处理改动。
+description: Android 项目性能风险门禁。用于 UI 渲染、RecyclerView、图片、启动、主线程、下载/网络热路径、数据库和大文件处理改动。
 ---
 
 # Android 性能门禁

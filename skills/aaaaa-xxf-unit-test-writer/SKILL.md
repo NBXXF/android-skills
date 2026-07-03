@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-unit-test-writer
-description: 为 xxf_android 改动补最小有效回归测试。用于 Kotlin 逻辑、Java 转 Kotlin 迁移、权限/文件/网络边界、数据转换、线程调度和公共 API 行为变更。
+description: 为 Android 项目改动补最小有效回归测试。用于 Kotlin 逻辑、Java 转 Kotlin 迁移、权限/文件/网络边界、数据转换、线程调度和公共 API 行为变更。
 ---
 
 # 单测补写

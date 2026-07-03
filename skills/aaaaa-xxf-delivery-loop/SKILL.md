@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-delivery-loop
-description: 处理 XXF Android 项目中的通用编码任务交付流程。用于 bugfix、功能开发、重构、回归修复等日常 coding 请求；负责自动串起模块 skill、补测、Gradle 验证、代码审查与风险门禁。
+description: 处理 Android 项目中的通用编码任务交付流程。用于 bugfix、功能开发、重构、回归修复等日常 coding 请求；负责自动串起模块 skill、补测、Gradle 验证、代码审查与风险门禁。
 ---
 
 # 交付总控

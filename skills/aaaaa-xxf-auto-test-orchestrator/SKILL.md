@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-auto-test-orchestrator
-description: 发现并执行 xxf_android 当前改动最相关的 Gradle 验证，优先最小范围，汇总失败根因与残余风险。
+description: 发现并执行 Android 项目当前改动最相关的 Gradle 验证，优先最小范围，汇总失败根因与残余风险。
 ---
 
 # Gradle 验证编排

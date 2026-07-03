@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-ui-design-alignment
-description: xxf_android 的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配、动态内容适配、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
+description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配、动态内容适配、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
 ---
 
 # UI 设计稿对齐

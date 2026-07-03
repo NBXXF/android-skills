@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-coding-arch
-description: xxf_android Android/Kotlin 模块架构强制规范。新增、维护或重构 Android library/app/demo 模块时必须遵守；明确单个模块工程目录、包内分层、依赖方向、公共 API、optional、聚合 libs 和 demo/sample 边界。
+description: Android/Kotlin 模块架构强制规范。新增、维护或重构 Android library/app/demo 模块时必须遵守；明确单个模块工程目录、包内分层、依赖方向、公共 API、optional、聚合 libs 和 demo/sample 边界。
 ---
 
 # Android 模块架构约束

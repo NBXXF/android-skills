@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-coding-style
-description: xxf_android 项目的 Android/Kotlin/XML/Gradle 编码规范。修改 Kotlin、资源、Manifest、Gradle 或发布配置时必须遵守；语言选择先按 aaaaa-xxf-language-selection 执行。
+description: Android 项目的 Android/Kotlin/XML/Gradle 编码规范。修改 Kotlin、资源、Manifest、Gradle 或发布配置时必须遵守；语言选择先按 aaaaa-xxf-language-selection 执行。
 ---
 
 # Android 编码规范

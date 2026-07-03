@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-code-reviewer
-description: 对 xxf_android 改动做代码审查。用于跨模块、公共 API、生命周期、线程、权限、存储、网络、图片、下载、Gradle 发布配置等有回归风险的改动。
+description: 对 Android 项目改动做代码审查。用于跨模块、公共 API、生命周期、线程、权限、存储、网络、图片、下载、Gradle 发布配置等有回归风险的改动。
 ---
 
 # 代码审查规则

@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-risk-gate
-description: 为 xxf_android 改动给出合并/发布风险结论。用于公共库发布、基础模块、权限隐私、网络下载、数据库、图片相机、Gradle 配置等风险判断。
+description: 为 Android 项目改动给出合并/发布风险结论。用于公共库发布、基础模块、权限隐私、网络下载、数据库、图片相机、Gradle 配置等风险判断。
 ---
 
 # 风险门禁

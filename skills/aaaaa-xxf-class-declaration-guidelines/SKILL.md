@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-class-declaration-guidelines
-description: xxf_android 类型声明与文件组织规则。修改 Activity、Fragment、View、Adapter、ViewModel、Manager、Provider、扩展工具类时使用。
+description: Android 项目类型声明与文件组织规则。修改 Activity、Fragment、View、Adapter、ViewModel、Manager、Provider、扩展工具类时使用。
 ---
 
 # 类型声明规则

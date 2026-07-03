@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-comment-guidelines
-description: xxf_android 注释规范。用于要求和补充类、方法、字段、属性、复杂逻辑的中文注释风格。
+description: Android 项目注释规范。用于要求和补充类、方法、字段、属性、复杂逻辑的中文注释风格。
 ---
 
 # 注释规范
