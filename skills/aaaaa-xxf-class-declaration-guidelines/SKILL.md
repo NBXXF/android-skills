@@ -15,6 +15,8 @@ description: Android 项目类型声明与文件组织规则。修改 Activity�
 
 - Activity/Fragment 只做页面编排，业务逻辑下沉到可测试类或现有架构层。
 - View/Adapter 不持有长生命周期 Context；回调要可解绑。
+- 网络层、业务层、UI 层相关的类不要一层一层继续挂匿名回调；如果类的职责已经变成“接力传 JSON 字符串”或“接力转发回调”，优先重构成明确的数据对象和可组合异步流。
+- 需要跨层传递的数据不要使用裸 `String` 承载 JSON 继续向上游抛；应在边界处完成解析并转换成 DTO/VO/Result 等明确对象。
 - 单例必须明确线程安全、初始化时机和是否持有 Context。
 - Provider/SDK 适配类只暴露项目协议或封装 API，不把三方 SDK 类型扩散到核心模块公共 API，除非模块本身就是 provider。
 

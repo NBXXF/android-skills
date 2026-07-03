@@ -12,6 +12,8 @@ description: 对 Android 项目改动做代码审查。用于跨模块、公共 
 - 公共库 API 是否破坏调用方或 Maven 发布兼容性
 - `api`/`implementation`/`compileOnly` 是否选择正确
 - Activity/Fragment/View 生命周期、Context 持有、回调解绑、线程切换是否安全
+- 是否存在网络层到业务层再到 UI 层的层层回调、匿名回调嵌套或回调地狱
+- 是否把 JSON `String`、`Map`、`Bundle` 之类的弱类型数据当成跨层业务载体持续透传，而不是在边界转换成明确对象
 - 权限、文件 URI、FileProvider、相册/相机、Android 版本兼容是否完整
 - 网络、下载、RxJava、协程/线程、ObjectBox/Room 数据访问是否有竞态或泄漏
 - 资源命名、Manifest provider/permission、ProGuard/R8 配置是否会影响宿主

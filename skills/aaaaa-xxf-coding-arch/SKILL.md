@@ -79,6 +79,13 @@ description: Android/Kotlin 模块架构强制规范。新增、维护或重构 
 - 禁止用 `Manager`、`Tool`、`Utils`、`Helper`、`Handler`、`Processor`、`Center` 承载业务逻辑；出现这类命名时先判断是否应迁到 `service/`。
 - 真正无业务含义的通用扩展和工具放基础模块或 `domain/mapper` 等明确位置，不塞进全局单例。
 
+### 异步与回调
+
+- 禁止网络层、数据层、业务层、UI 层之间用“层层回调”串起来传数据，尤其是 `api -> repository -> service -> viewmodel -> UI` 这种逐层嵌套 callback。
+- 禁止把 `String` 类型的 JSON 当作跨层业务载体继续透传、继续回调、继续解析；网络响应、领域状态和页面状态都必须落到明确对象上。
+- 跨层异步编排优先使用 RxJava 这类可组合流式 API，或当前模块既有的统一异步模型；不要为了省事新增多层匿名回调和回调地狱。
+- 如果确实只能用回调，回调边界要收敛在单层，返回值必须是明确的 DTO/VO/Result 对象，不允许把原始 JSON 字符串直接抛给上层。
+
 ### 模型和数据
 
 - 网络请求/响应对象放 `domain/dto/`，不要散落在 `api/` 或 `repository/`。
