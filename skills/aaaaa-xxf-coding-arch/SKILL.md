@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-coding-arch
-description: Android/Kotlin 模块架构强制规范。新增、维护或重构 Android library/app/demo 模块时必须遵守；明确单个模块工程目录、包内分层、依赖方向、公共 API、optional、聚合 libs 和 demo/sample 边界。
+description: Android/Kotlin 模块架构强制规范。新增、维护或重构 Android library/app/demo 模块时必须遵守；明确单个模块工程目录、包内分层、UI 技术选型、依赖方向、公共 API、optional、聚合 libs 和 demo/sample 边界。
 ---
 
 # Android 模块架构约束
@@ -99,6 +99,21 @@ description: Android/Kotlin 模块架构强制规范。新增、维护或重构 
 - 禁止在 UI 层写 `return 2`、固定多个入口按钮、按 `index == 0/1` 写业务分支。
 - 固定布局骨架可以在 UI 层定义，但 cell、section、菜单项、入口数量必须来自数据源。
 
+### UI 技术选型
+
+- 新增页面、弹窗、空态、列表、表单、设置页、详情页等 UI，默认使用 `Activity + Jetpack Compose` 实现。
+- 新增页面入口默认落在 Activity，布局通过 `setContent { ... }` 直接写 Compose；不要为了套 XML 或 Fragment 模板而新增 Fragment。
+- 不再新增 `res/layout/*.xml` 来写普通页面布局；不要用 XML layout + `findViewById`、XML layout + ViewBinding、XML layout + DataBinding 作为新 UI 默认方案。
+- 不新增 DataBinding、ViewBinding、RecyclerView Adapter 或传统 ViewHolder 来承载新 UI 主路径；列表优先使用 Compose `LazyColumn`、`LazyVerticalGrid` 等。
+- `AndroidManifest.xml`、`values.xml`、`drawable`、`navigation`、`provider_paths` 等非布局 XML 不属于本规则禁止范围，但不要把页面结构写进 layout XML。
+- Activity 只负责入口、依赖获取、系统回调和 `setContent`；Route 负责连接 `ViewModel`、收集状态、处理一次性事件和导航动作；Screen 只接收 UI state 和回调。
+- 子组件放在局部 composable 或 `presentation/widget`，不要把整个页面塞进一个巨大 composable。
+- 模块没有 Compose 配置时，只补当前页面所需的最小依赖；不要顺手升级全仓 Compose、Kotlin 或 AGP，除非任务明确要求。
+- 触达遗留 XML/View 页面时，默认优先评估迁移到 Compose；如果旧页面面积大、风险高或排期不允许，可以只做最小 XML 修复，但最终说明要写明为什么暂不迁移。
+- 系统强约束只能用 RemoteViews、AppWidget、通知自定义布局、输入法、三方 SDK 传统 View、地图、相机、播放器、WebView 等场景可以例外；能用 Compose 表达的页面结构仍然用 Compose 表达。
+- 项目已有强制的单 Activity + Compose Navigation 架构时，新增页面应作为 Compose destination 接入，而不是额外新增 Activity。
+- 实现 Compose UI 时继续按 `aaaaa-xxf-ui-design-alignment` 做设计对齐、动态内容、Insets、字体缩放和多机型适配。
+
 ### 模块边界
 
 - 只有可发布 library 模块建立 installable skill；demo/app/sample 只作为验证入口写入对应 library skill。
@@ -129,6 +144,9 @@ description: Android/Kotlin 模块架构强制规范。新增、维护或重构 
 - [ ] DTO/PO/VO/Mapper 分别放在 `domain/dto`、`domain/po`、`domain/vo`、`domain/mapper`，展示模型和 UI State 未直接复用网络 DTO？
 - [ ] DI 注册和路由注册都放在 `di/`，未散落到 `api/`、`presentation/` 或包根目录？
 - [ ] UI 集合和业务内容由 Service/ViewModel 数据驱动，未写死条目数量、索引分支或固定入口？
+- [ ] 新 UI 默认使用 Activity + Compose 或项目既有 Compose Navigation，未新增普通 `res/layout/*.xml`？
+- [ ] Activity 只做入口和生命周期处理，页面状态由 ViewModel/UI state 驱动，Compose Screen 不直接承载业务取数？
+- [ ] 如保留或修改遗留 XML/View，是否说明了暂不迁移到 Compose 的原因和边界？
 - [ ] 跨模块调用通过 `di/` 注册的路由、服务入口或模块公开协议完成，未把 Retrofit ApiService 当业务入口，也未 import 对方内部实现？
 - [ ] Gradle 的 `api`、`implementation`、`compileOnly` 使用符合依赖暴露边界？
 - [ ] 发布库同步检查 `libs`、`publish_maven.gradle`、Manifest、资源名前缀和风险门禁？
