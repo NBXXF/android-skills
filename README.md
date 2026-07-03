@@ -8,11 +8,11 @@ This repository contains generic Android workflow and engineering-constraint ski
 
 ```text
 skills/
-  xxf-aaa-delivery-loop/
-  xxf-aaa-coding-style/
-  xxf-aaa-coding-arch/
-  xxf-aaa-multi-module-structure/
-  xxf-aaa-test-strategy/
+  aaaaa-xxf-delivery-loop/
+  aaaaa-xxf-coding-style/
+  aaaaa-xxf-coding-arch/
+  aaaaa-xxf-multi-module-structure/
+  aaaaa-xxf-test-strategy/
   ...
 install.sh
 ```
@@ -64,7 +64,7 @@ bash /path/to/xxf_android/skills/install.sh codex project
 
 ## Codex Usage
 
-For normal Android coding work, read `xxf-aaa-delivery-loop` first. Then load the narrower skills it references, such as coding style, architecture, testing, review, risk, performance, or clarification.
+For normal Android coding work, read `aaaaa-xxf-delivery-loop` first. Then load the narrower skills it references, such as coding style, architecture, testing, review, risk, performance, or clarification.
 
 Project repositories can still keep their own module skills. Use this repository for shared Android process rules, and use project-local skills for concrete module or library details.
 

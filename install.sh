@@ -57,7 +57,7 @@ fi
 
 build_skills_list() {
   local item
-  for skill_dir in "$SKILLS_SRC"/xxf-aaa-*/; do
+  for skill_dir in "$SKILLS_SRC"/aaaaa-xxf-*/; do
     [[ -d "$skill_dir" ]] || continue
     item="$(basename "$skill_dir")"
     printf -- "- %s\n" "$item"
@@ -74,7 +74,7 @@ install_claude() {
 
   mkdir -p "$target"
   local count=0
-  for skill_dir in "$SKILLS_SRC"/xxf-aaa-*/; do
+  for skill_dir in "$SKILLS_SRC"/aaaaa-xxf-*/; do
     [[ -d "$skill_dir" ]] || continue
     local name
     name="$(basename "$skill_dir")"
@@ -98,7 +98,7 @@ install_codex() {
 
   mkdir -p "$target"
   local count=0
-  for skill_dir in "$SKILLS_SRC"/xxf-aaa-*/; do
+  for skill_dir in "$SKILLS_SRC"/aaaaa-xxf-*/; do
     [[ -d "$skill_dir" ]] || continue
     local name
     name="$(basename "$skill_dir")"
@@ -145,7 +145,7 @@ PY
     echo ""
     echo "For normal Android coding tasks, start with:"
     echo ""
-    echo "    .agents/skills/xxf-aaa-delivery-loop/SKILL.md"
+    echo "    .agents/skills/aaaaa-xxf-delivery-loop/SKILL.md"
     echo ""
     echo "Use project-local module or business skills separately when the target repository provides them."
     echo ""
@@ -173,7 +173,7 @@ install_cursor() {
 
   mkdir -p "$target"
   local count=0
-  for skill_dir in "$SKILLS_SRC"/xxf-aaa-*/; do
+  for skill_dir in "$SKILLS_SRC"/aaaaa-xxf-*/; do
     [[ -d "$skill_dir" ]] || continue
     local name
     name="$(basename "$skill_dir")"

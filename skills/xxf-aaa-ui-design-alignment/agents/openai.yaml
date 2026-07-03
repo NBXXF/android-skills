@@ -1,4 +1,0 @@
-interface:
-  display_name: "XXF UI Design Alignment"
-  short_description: "Align Compose UI to design specs across windows"
-  default_prompt: "Use $xxf-aaa-ui-design-alignment to implement this Jetpack Compose UI from the design spec with pixel alignment, dynamic content handling, and multi-window adaptation."

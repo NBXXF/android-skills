@@ -1,4 +1,0 @@
-interface:
-  display_name: "Android 多模块工程结构"
-  short_description: "规划 Android 多模块分层、命名和依赖方向"
-  default_prompt: "使用 $xxf-aaa-multi-module-structure 规划 Android 多模块工程结构、分层和依赖关系。"
