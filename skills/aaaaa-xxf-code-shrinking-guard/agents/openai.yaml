@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Shrinking Guard"
+  short_description: "强制审计 Maven Android/JVM 库的 R8 混淆规则"
+  default_prompt: "Use $aaaaa-xxf-code-shrinking-guard to audit this Android project for R8 and ProGuard safety."
