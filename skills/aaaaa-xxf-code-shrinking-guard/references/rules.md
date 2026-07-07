@@ -26,6 +26,8 @@ Parcelize / Parcelable / Serializable
 
 同时检查注解处理器、KSP/KAPT 生成目录、`META-INF/services`、manifest 类名、XML 自定义 View、导航/路由表、JNI 注册、序列化模型和泛型父类解析。
 
+发现 Retrofit 时执行 [retrofit-response-type-keeper.md](retrofit-response-type-keeper.md) 的专项流程。
+
 以下不一定需要规则：仅比较 `SomeType::class.java`、`isAssignableFrom`，或者反射目标完全可由 R8 静态推断。必须根据目标是否被裁剪、改名或移除属性判断，不能按 import 判断。
 
 ## 2. 动态行为到规则的映射
@@ -140,3 +142,4 @@ unzip -p module.jar META-INF/proguard/<name>.pro
 - 枚举常量字段名是否属于协议？有序列化注解时能否允许常量改名？
 - ServiceLoader 资源内容和 provider 构造器是否在混淆后验证？
 - 更新依赖版本后，是否重复、冲突或覆盖其官方规则？
+- 每个定义 Retrofit service 的源码模块是否运行了同版本 `response-type-keeper`？
