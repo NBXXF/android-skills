@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-android-i18n-strings
-description: Android 国际化字符串门禁。新增或修改 Kotlin/Java/XML/Compose UI、Toast、Dialog、Snackbar、错误提示、按钮、标题、hint、contentDescription、Manifest label、菜单、Preference、空态等用户可见文案时必须使用；发现既有硬编码显示文案、字符串拼接展示文案、重复散落文案时主动提取到 strings.xml/plurals，并避免误改业务常量、协议字段、key、tag、路由、配置值、日志和测试 fixture。
+description: Android 国际化字符串门禁。新增或修改 Kotlin/Java/XML/Compose UI、Toast、Dialog、Snackbar、错误提示、按钮、标题、hint、contentDescription、Manifest label、菜单、Preference、空态等用户可见文案时必须使用；语言切换和语言敏感字符串读取优先使用 com.NBXXF.xxf_android:lib_i18n 的 `setAppLanguage(...)`、`resetAppLanguage()`、`restoreCachedAppLanguage()`、`getLocalizedString(...)`、`resString()` 等 API；发现既有硬编码显示文案、字符串拼接展示文案、重复散落文案时主动提取到 strings.xml/plurals，并避免误改业务常量、协议字段、key、tag、路由、配置值、日志和测试 fixture。
 ---
 
 # Android 文案国际化
@@ -14,6 +14,15 @@ description: Android 国际化字符串门禁。新增或修改 Kotlin/Java/XML/
 - 不确定字符串是不是业务常量时，先沿调用链确认用途；仍不确定时保留原样并说明风险，不要为了消除硬编码盲目迁移。
 - 触达 Android UI 文件时，要主动检查同一文件和同一 UI 组件内的既有硬编码文案，不只处理用户点名的那一行。
 - 国际化改动不能改变业务值、资源 ID 对外契约、构建配置、运行分支或埋点/协议上报；遇到不确定边界时，宁可保留并记录，也不要猜测迁移。
+
+## lib_i18n 优先级
+
+- 只要任务涉及应用内语言切换、语言恢复或语言敏感字符串读取，优先使用 `com.NBXXF.xxf_android:lib_i18n`（源码包 `com.xxf.android.i18n`）。
+- 语言切换优先级：`setAppLanguage(...)` / `appLanguage = ...` 设置语言，`resetAppLanguage()` 恢复跟随系统，`restoreCachedAppLanguage()` 负责启动早期恢复。
+- 字符串读取优先级：`Context.getLocalizedString(...)`、`Context.getLocalizedQuantityString(...)`、`Context.getLocalizedStringArray(...)`，以及 `Int.resString()`、`Int.resQuantityString()`、`Int.resStringArray()`。
+- 全局工具类、Application、Service、Worker、BroadcastReceiver、通知、Toast、后台任务和跨 Context 场景，默认不要直接用 `applicationContext.getString(...)` / `applicationContext.resources...`，先改成本模块的 localized API。
+- 只有在当前 UI Context 已经由 AppCompat 正确提供、且不涉及全局读取时，才考虑直接使用原生 `getString(...)` 或 `stringResource(...)`。
+- 不要手写 `AppCompatDelegate.setApplicationLocales(...)`、`attachBaseContext` 包装或自建语言缓存，除非任务明确要求绕开 `lib_i18n` 的特殊入口。
 
 ## 判定顺序
 

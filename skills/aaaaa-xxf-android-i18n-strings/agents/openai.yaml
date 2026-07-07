@@ -1,4 +1,4 @@
 interface:
   display_name: "Android I18n Strings"
   short_description: "Android 用户可见文案提取与国际化门禁"
-  default_prompt: "Use $aaaaa-xxf-android-i18n-strings to remove hardcoded Android UI text and extract safe string resources."
+  default_prompt: "Use $aaaaa-xxf-android-i18n-strings to remove hardcoded Android UI text, prefer com.NBXXF.xxf_android:lib_i18n for language switching and localized string access, and extract safe string resources."

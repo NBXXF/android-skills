@@ -12,6 +12,8 @@
 - "已有代码里中文/英文提示语帮我提取资源"
 - "contentDescription/label/menu title/preference summary 要补国际化"
 - "错误码映射成本地提示文案时怎么命名 string key"
+- "切换应用语言优先用什么 API，别手写 AppCompatDelegate"
+- "全局取字符串时优先用 lib_i18n 还是直接 applicationContext.getString"
 - "这个 demo/sample 页面上的展示文案也顺手处理下"
 - "Navigation graph/menu/preference 里的 title/summary 写死了"
 - "DataBinding 里 @{\"欢迎 \" + name} 怎么国际化"
