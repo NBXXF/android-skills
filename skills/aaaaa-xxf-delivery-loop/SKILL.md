@@ -20,11 +20,12 @@ description: 处理 Android 项目中的通用编码任务交付流程。用于 
 5. 涉及 VO/DTO/PO/DO/BO/Entity/Query/Command 等领域模型命名时，读 `aaaaa-xxf-model-naming-guidelines`。
 6. 需要判断测试范围时读 `aaaaa-xxf-test-strategy`；需要补测时读 `aaaaa-xxf-unit-test-writer`。
 7. 完成修改后进入 `aaaaa-xxf-auto-test-orchestrator`，运行最小相关 Gradle 验证。
-8. 改动跨模块、触及公共 API、生命周期、线程、权限、存储、网络、图片、发布配置时，读 `aaaaa-xxf-code-reviewer` 和 `aaaaa-xxf-risk-gate`。
-9. 改动涉及 app、工程内 library 或可发布 Maven library，且新增或修改反射、注解、泛型解析、序列化、ServiceLoader/JNI、按名称访问、依赖、混淆或发布配置时，必须读 `aaaaa-xxf-code-shrinking-guard` 并完成对应 app rules/consumer rules、release 产物和 minify 门禁，不得因用户未提混淆或模块不发布 Maven 而跳过。
-10. 根据 Figma/Figama、MasterGo、蓝湖、摹客、截图或设计稿实现/修复 UI 时，读 `aaaaa-xxf-ui-design-alignment`。
-11. 改动触及 UI 渲染、列表、图片、启动、主线程、下载/网络热路径时，读 `aaaaa-xxf-android-performance-gate`。
-12. 方案不确定、结论冲突、技术选型分歧、业务规则无法从代码事实推导，或用户目标与架构/发布/兼容约束冲突时，读 `aaaaa-xxf-clarify-question`，先让用户抉择，并把决策记录到对应模块的 `vibe-coding-clarify.md`。
+8. 改动涉及可发布 Android Maven Library/AAR、`BuildConfig`、`buildFeatures`、`maven-publish`、发布 variant、调试/环境开关或宿主初始化配置时，必须读 `aaaaa-xxf-maven-library-release-guard`，完成 release 变体与 AAR 字节码门禁。
+9. 改动跨模块、触及公共 API、生命周期、线程、权限、存储、网络、图片、发布配置时，读 `aaaaa-xxf-code-reviewer` 和 `aaaaa-xxf-risk-gate`。
+10. 改动涉及 app、工程内 library 或可发布 Maven library，且新增或修改反射、注解、泛型解析、序列化、ServiceLoader/JNI、按名称访问、依赖、混淆或发布配置时，必须读 `aaaaa-xxf-code-shrinking-guard` 并完成对应 app rules/consumer rules、release 产物和 minify 门禁，不得因用户未提混淆或模块不发布 Maven 而跳过。
+11. 根据 Figma/Figama、MasterGo、蓝湖、摹客、截图或设计稿实现/修复 UI 时，读 `aaaaa-xxf-ui-design-alignment`。
+12. 改动触及 UI 渲染、列表、图片、启动、主线程、下载/网络热路径时，读 `aaaaa-xxf-android-performance-gate`。
+13. 方案不确定、结论冲突、技术选型分歧、业务规则无法从代码事实推导，或用户目标与架构/发布/兼容约束冲突时，读 `aaaaa-xxf-clarify-question`，先让用户抉择，并把决策记录到对应模块的 `vibe-coding-clarify.md`。
 
 ## 验证优先级
 

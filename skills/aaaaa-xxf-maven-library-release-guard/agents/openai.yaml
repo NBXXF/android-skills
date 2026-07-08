@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maven 发布库门禁"
+  short_description: "检查 Android Maven Library 的 BuildConfig 与 release 产物风险"
+  default_prompt: "审查并修复 Android Maven 发布库中的 BuildConfig、变体和 release AAR 行为风险。"

@@ -12,6 +12,7 @@ skills/
   aaaaa-xxf-coding-style/
   aaaaa-xxf-coding-arch/
   aaaaa-xxf-multi-module-structure/
+  aaaaa-xxf-maven-library-release-guard/
   aaaaa-xxf-test-strategy/
   ...
 install.sh
