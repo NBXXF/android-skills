@@ -41,10 +41,22 @@ build_skills_list() {
 copy_skill_dir() {
   local src="$1"
   local dest="$2"
+  local parent
   local tmp="${dest}.tmp.$$"
 
+  parent="$(dirname "$dest")"
+  mkdir -p "$parent"
+
+  # 覆盖规则:
+  # - 目标不存在:直接安装。
+  # - 目标是旧软链:删除软链本身,不跟随到软链目标。
+  # - 目标是旧目录或普通文件:删除后替换为新的真实目录。
+  # 先拷贝到同级临时目录,拷贝成功后再替换目标,避免失败时破坏旧安装。
   rm -rf "$tmp"
-  cp -R "$src" "$tmp"
+  if ! cp -R "$src" "$tmp"; then
+    rm -rf "$tmp"
+    return 1
+  fi
   rm -rf "$dest"
   mv "$tmp" "$dest"
 }

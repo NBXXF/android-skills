@@ -50,8 +50,18 @@ resolve_android_skills_dir() {
         return
     fi
 
+    # 个人开发机默认 checkout 位置。保持在 npx/cache 之前作为本地无 Node.js 兜底。
+    # 如果团队机器路径不同,用 ANDROID_SKILLS_DIR 显式覆盖。
+    local default_dir="$HOME/Documents/developer/agent/android-skills"
+    if [[ -f "$default_dir/install.sh" && -d "$default_dir/skills" ]]; then
+        printf '%s\n' "$default_dir"
+        return
+    fi
+
     echo "error: missing ANDROID_SKILLS_DIR." >&2
-    echo "Run from an android-skills checkout, or pass:" >&2
+    echo "Run from an android-skills checkout, place it at:" >&2
+    echo "  $HOME/Documents/developer/agent/android-skills" >&2
+    echo "or pass:" >&2
     echo "  ANDROID_SKILLS_DIR=/path/to/android-skills ./setup-ai-skills.sh" >&2
     exit 1
 }
@@ -68,12 +78,58 @@ INSTALL_SCRIPT="$ANDROID_SKILLS_DIR/install.sh"
     exit 1
 }
 
-echo "-> 安装 android-skills AI skills(Claude Code · project scope · copy mode)"
-bash "$INSTALL_SCRIPT" claude project
+copy_skill_dir() {
+    local src="$1"
+    local dest="$2"
+    local parent
+    local tmp="${dest}.tmp.$$"
 
-echo ""
+    parent="$(dirname "$dest")"
+    mkdir -p "$parent"
+
+    rm -rf "$tmp"
+    mkdir -p "$tmp"
+    if ! cp -R "$src/." "$tmp/"; then
+        rm -rf "$tmp"
+        return 1
+    fi
+    rm -rf "$dest"
+    mv "$tmp" "$dest"
+}
+
+sync_project_agent_skills() {
+    local target_dir="$1"
+    local label="$2"
+    local source_dir=".agents/skills"
+    local count=0
+
+    [[ -d "$source_dir" ]] || return 0
+
+    echo ""
+    echo "-> 同步项目 .agents/skills 到 ${label}"
+    mkdir -p "$target_dir"
+
+    for skill_dir in "$source_dir"/*; do
+        [[ -d "$skill_dir" ]] || continue
+        [[ -f "$skill_dir/SKILL.md" ]] || continue
+        local name
+        name="$(basename "$skill_dir")"
+        copy_skill_dir "$skill_dir" "$target_dir/$name"
+        count=$((count + 1))
+    done
+
+    echo "   -> 同步了 $count 个 skill 到 ${target_dir}"
+}
+
 echo "-> 安装 android-skills AI skills(Codex CLI -> .agents/skills · project scope · copy mode)"
 bash "$INSTALL_SCRIPT" codex project
+
+echo ""
+echo "-> 安装 android-skills AI skills(Claude Code -> .claude/skills · project scope · copy mode)"
+bash "$INSTALL_SCRIPT" claude project
+
+sync_project_agent_skills ".claude/skills" ".claude/skills"
+sync_project_agent_skills ".codex/skills" ".codex/skills"
 
 echo ""
 echo "-> 校验关键 skill 文件"
