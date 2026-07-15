@@ -7,7 +7,7 @@
 #
 # agent:
 #   claude      - Claude Code (~/.claude/skills or .claude/skills)
-#   codex       - Codex CLI (.agents/skills symlinks plus an AGENTS.md reference block)
+#   codex       - Codex CLI (.agents/skills copies plus an AGENTS.md reference block)
 #   cursor      - Cursor (.cursor/rules/*.mdc)
 #
 # scope:
@@ -16,8 +16,6 @@
 
 set -euo pipefail
 
-SKILLS_REPO="${XXF_ANDROID_SKILLS_REPO:-https://github.com/NBXXF/android-skills.git}"
-CACHE_DIR="${XXF_ANDROID_SKILLS_CACHE:-$HOME/.cache/xxf-shared-android-skills}"
 AGENT="${1:-}"
 SCOPE="${2:-user}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,35 +23,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 err() { echo "error: $*" >&2; exit 1; }
 info() { echo "-> $*"; }
 
-display_path() {
-  local path="$1"
-  if [[ "$path" == "$HOME"/* ]]; then
-    printf '$HOME%s' "${path#$HOME}"
-  else
-    printf '%s' "$path"
-  fi
-}
-
 [[ -n "$AGENT" ]] || err "missing agent. usage: $0 <claude|codex|cursor> [user|project]"
 
-if [[ -d "$SCRIPT_DIR/skills" && -z "${XXF_ANDROID_SKILLS_FORCE_CACHE:-}" ]]; then
-  SKILLS_SRC="$SCRIPT_DIR/skills"
-  SKILLS_SRC_DISPLAY="$(display_path "$SKILLS_SRC")"
-  info "using local skills: $SKILLS_SRC"
-else
-  if [[ -d "$CACHE_DIR/.git" ]]; then
-    info "updating cache: $CACHE_DIR"
-    git -C "$CACHE_DIR" pull --ff-only --quiet
-  else
-    info "cloning to cache: $CACHE_DIR"
-    mkdir -p "$(dirname "$CACHE_DIR")"
-    git clone --depth 1 --quiet "$SKILLS_REPO" "$CACHE_DIR"
-  fi
-  SKILLS_SRC="$CACHE_DIR/skills"
-  SKILLS_SRC_DISPLAY="$(display_path "$SKILLS_SRC")"
-fi
-
-[[ -d "$SKILLS_SRC" ]] || err "skills/ not found: $SKILLS_SRC"
+SKILLS_SRC="$SCRIPT_DIR/skills"
+[[ -d "$SKILLS_SRC" ]] || err "skills/ not found beside install.sh. Run this script from a full android-skills checkout."
+info "using local skills: $SKILLS_SRC"
 
 build_skills_list() {
   local item
@@ -62,6 +36,17 @@ build_skills_list() {
     item="$(basename "$skill_dir")"
     printf -- "- %s\n" "$item"
   done
+}
+
+copy_skill_dir() {
+  local src="$1"
+  local dest="$2"
+  local tmp="${dest}.tmp.$$"
+
+  rm -rf "$tmp"
+  cp -R "$src" "$tmp"
+  rm -rf "$dest"
+  mv "$tmp" "$dest"
 }
 
 install_claude() {
@@ -78,7 +63,7 @@ install_claude() {
     [[ -d "$skill_dir" ]] || continue
     local name
     name="$(basename "$skill_dir")"
-    ln -sfn "$skill_dir" "$target/$name"
+    copy_skill_dir "$skill_dir" "$target/$name"
     count=$((count + 1))
   done
   info "installed $count skills to $target"
@@ -102,7 +87,7 @@ install_codex() {
     [[ -d "$skill_dir" ]] || continue
     local name
     name="$(basename "$skill_dir")"
-    ln -sfn "$skill_dir" "$target/$name"
+    copy_skill_dir "$skill_dir" "$target/$name"
     count=$((count + 1))
   done
 
@@ -154,7 +139,7 @@ PY
     echo "Available shared skills:"
     echo ""
     echo "$skills_list"
-    echo "Update cache: \`git -C $(display_path "$CACHE_DIR") pull\` (or re-run install.sh)."
+    echo "Update skills: update the android-skills checkout, then re-run install.sh."
     echo "$marker_end"
   } > "$agents_md.new"
   mv "$agents_md.new" "$agents_md"

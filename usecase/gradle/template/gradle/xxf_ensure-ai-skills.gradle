@@ -1,0 +1,121 @@
+import java.util.concurrent.TimeUnit
+
+if (project != rootProject) {
+    logger.lifecycle("[xxf_ensure-ai-skills] Apply gradle/xxf_ensure-ai-skills.gradle from the root project only; skip ${project.path}")
+    return
+}
+
+if (rootProject.ext.has("xxfAiSkillsGradleHookInstalled")) {
+    return
+}
+rootProject.ext.set("xxfAiSkillsGradleHookInstalled", true)
+
+def xxfAiSkillsBooleanProperty = { String name, boolean defaultValue ->
+    def value = providers.gradleProperty(name).orNull
+    if (value == null || value.trim().isEmpty()) {
+        return defaultValue
+    }
+    return value.trim().equalsIgnoreCase("true")
+}
+
+def xxfAiSkillsIntProperty = { String name, int defaultValue ->
+    def value = providers.gradleProperty(name).orNull
+    if (value == null || value.trim().isEmpty()) {
+        return defaultValue
+    }
+    try {
+        return Integer.parseInt(value.trim())
+    } catch (Throwable ignored) {
+        return defaultValue
+    }
+}
+
+def xxfAiSkillsLog = { File logFile, String message ->
+    logFile.parentFile.mkdirs()
+    logFile << "[${new Date().format('yyyy-MM-dd HH:mm:ss')}] ${message}\n"
+}
+
+def xxfRunAiSkillsSetup = { String trigger ->
+    File stateDir = new File(rootDir, ".gradle/xxf_ensure-ai-skills")
+    File logFile = new File(stateDir, "setup-ai-skills.log")
+    File lockFile = new File(stateDir, "setup.lock")
+    stateDir.mkdirs()
+
+    xxfAiSkillsLog(logFile, "${trigger}: invoked")
+    int timeoutSec = Math.max(1, xxfAiSkillsIntProperty("xxf.aiSkills.timeoutSec", 120))
+
+    if (lockFile.exists()) {
+        long maxLockAgeMillis = TimeUnit.SECONDS.toMillis(Math.max(60, timeoutSec + 60))
+        long lockAgeMillis = System.currentTimeMillis() - lockFile.lastModified()
+        if (lockAgeMillis < maxLockAgeMillis) {
+            xxfAiSkillsLog(logFile, "${trigger}: setup-ai-skills.sh is already running, skip this trigger")
+            return
+        }
+        lockFile.delete()
+    }
+
+    if (!lockFile.createNewFile()) {
+        xxfAiSkillsLog(logFile, "${trigger}: setup-ai-skills.sh lock is busy, skip this trigger")
+        return
+    }
+
+    try {
+        File rootSetupScript = new File(rootDir, "setup-ai-skills.sh")
+        File fallbackSetupScript = new File(rootDir, "gradle/setup-ai-skills.sh")
+        File setupScript
+
+        if (rootSetupScript.isFile()) {
+            setupScript = rootSetupScript
+            xxfAiSkillsLog(logFile, "${trigger}: using root setup-ai-skills.sh")
+        } else if (fallbackSetupScript.isFile()) {
+            setupScript = fallbackSetupScript
+            xxfAiSkillsLog(logFile, "${trigger}: root setup-ai-skills.sh missing, using gradle/setup-ai-skills.sh")
+        } else {
+            xxfAiSkillsLog(logFile, "${trigger}: setup-ai-skills.sh missing in root and gradle, skip setup")
+            return
+        }
+
+        xxfAiSkillsLog(logFile, "${trigger}: running ${setupScript.absolutePath}, timeout=${timeoutSec}s")
+
+        ProcessBuilder builder = new ProcessBuilder("bash", setupScript.absolutePath)
+        builder.directory(rootDir)
+        builder.environment().put("GIT_TERMINAL_PROMPT", "0")
+        builder.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile))
+        builder.redirectError(ProcessBuilder.Redirect.appendTo(logFile))
+
+        Process process = builder.start()
+        boolean finished = process.waitFor(timeoutSec, TimeUnit.SECONDS)
+        if (!finished) {
+            process.destroyForcibly()
+            xxfAiSkillsLog(logFile, "${trigger}: setup-ai-skills.sh timed out after ${timeoutSec}s; Gradle continues")
+            return
+        }
+
+        int status = process.exitValue()
+        if (status == 0) {
+            xxfAiSkillsLog(logFile, "${trigger}: setup-ai-skills.sh finished successfully")
+        } else {
+            xxfAiSkillsLog(logFile, "${trigger}: setup-ai-skills.sh failed with status ${status}; Gradle continues")
+        }
+    } catch (Throwable throwable) {
+        xxfAiSkillsLog(logFile, "${trigger}: setup-ai-skills.sh threw ${throwable.class.name}: ${throwable.message}; Gradle continues")
+    } finally {
+        lockFile.delete()
+    }
+}
+
+tasks.register("xxfSetupAiSkills") {
+    group = "xxf"
+    description = "Best-effort install or refresh android-skills AI skills."
+    doLast {
+        xxfRunAiSkillsSetup("task")
+    }
+}
+
+boolean autoEnabled = xxfAiSkillsBooleanProperty("xxf.aiSkills.auto", true)
+boolean forceEnabled = xxfAiSkillsBooleanProperty("xxf.aiSkills.force", false)
+boolean fromIdeSync = System.getProperty("idea.sync.active") == "true"
+
+if (autoEnabled && (fromIdeSync || forceEnabled)) {
+    xxfRunAiSkillsSetup(fromIdeSync ? "ide-sync" : "force")
+}

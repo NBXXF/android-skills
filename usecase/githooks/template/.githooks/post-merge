@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+"$repo_root/.githooks/xxf_ensure-ai-skills" post-merge || true
+
+exit 0

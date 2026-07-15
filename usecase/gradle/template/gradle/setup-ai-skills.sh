@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 #
-# setup-ai-skills.sh
-#
-# 每台新机器 clone 本仓后跑一次。安装后需要重启 claude / codex 进程,
-# `/skills` 能看到 aaaaa-xxf-* 开头的条目即生效。
+# Fallback copy for Gradle sync when the repository root setup-ai-skills.sh is absent.
+# It does not download skills by itself. Pass ANDROID_SKILLS_DIR to a local
+# android-skills checkout, or keep setup-ai-skills.sh in the repository root.
 #
 # 硬约束:
 # - 内部安装流程不得依赖 npx / npm / Node.js,因为目标机器不一定安装这些工具。
@@ -13,8 +12,14 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$PROJECT_ROOT"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"; then
+    :
+else
+    REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
+
+cd "$REPO_ROOT"
 
 resolve_android_skills_dir() {
     if [[ -n "${ANDROID_SKILLS_DIR:-}" ]]; then
@@ -22,14 +27,14 @@ resolve_android_skills_dir() {
         return
     fi
 
-    if [[ -f "$PROJECT_ROOT/install.sh" && -d "$PROJECT_ROOT/skills" ]]; then
-        printf '%s\n' "$PROJECT_ROOT"
+    if [[ -f "$REPO_ROOT/install.sh" && -d "$REPO_ROOT/skills" ]]; then
+        printf '%s\n' "$REPO_ROOT"
         return
     fi
 
     echo "error: missing ANDROID_SKILLS_DIR." >&2
-    echo "Run from an android-skills checkout, or pass:" >&2
-    echo "  ANDROID_SKILLS_DIR=/path/to/android-skills ./setup-ai-skills.sh" >&2
+    echo "Pass a local android-skills checkout, for example:" >&2
+    echo "  ANDROID_SKILLS_DIR=/path/to/android-skills ./gradlew xxfSetupAiSkills" >&2
     exit 1
 }
 

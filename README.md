@@ -20,13 +20,20 @@ install.sh
 
 ## Install
 
-Install the shared skills from a local checkout. Run project-scoped installs from the Android project root where the agent should discover the skills:
+There are three supported installation paths. Prefer the local shell scripts for team/project automation because they do not depend on Node.js, npm, or npx.
+
+### 1. Local `install.sh`
+
+Use this when you already have a local `android-skills` checkout and want to install into a project or user-level agent directory. The script copies files directly from `skills/`; it does not download to a user cache and does not create symlinks.
+
+Run project-scoped installs from the Android project root where the agent should discover the skills:
 
 ```bash
 git clone https://github.com/NBXXF/android-skills.git /path/to/android-skills
 cd /path/to/target-android-project
 
 bash /path/to/android-skills/install.sh codex project
+bash /path/to/android-skills/install.sh claude project
 bash /path/to/android-skills/install.sh cursor project
 ```
 
@@ -39,10 +46,41 @@ bash /path/to/android-skills/install.sh claude user
 
 Install targets:
 
-- Codex project install creates symlinks in `.agents/skills` and adds a small managed block to `AGENTS.md`.
-- Codex user install creates symlinks in `$HOME/.agents/skills`.
-- Claude install creates symlinks in `.claude/skills`.
+- Codex project install copies skill directories into `.agents/skills` and adds a small managed block to `AGENTS.md`.
+- Codex user install copies skill directories into `$HOME/.agents/skills`.
+- Claude install copies skill directories into `.claude/skills`.
 - Cursor project install copies rules to `.cursor/rules`.
+
+### 2. Project `setup-ai-skills.sh`
+
+Use this as the project bootstrap entrypoint. It installs both Claude Code and Codex project skills, then checks that the key `aaaaa-xxf-delivery-loop` skill exists.
+
+If `setup-ai-skills.sh` is inside the `android-skills` checkout, run it directly:
+
+```bash
+cd /path/to/android-skills
+./setup-ai-skills.sh
+```
+
+If `setup-ai-skills.sh` is copied into a target Android project, pass the local checkout path:
+
+```bash
+cd /path/to/target-android-project
+ANDROID_SKILLS_DIR=/path/to/android-skills ./setup-ai-skills.sh
+```
+
+This script is intentionally a no-Node.js replacement for `npx skills add`. Do not change internal `setup-ai-skills.sh` implementations to call `npx`, `npm`, or Node.js.
+
+### 3. Optional `npx skills`
+
+Use this only on machines that already have Node.js/npm. It is convenient for manual installs, but it is not an internal dependency of this repository's setup scripts.
+
+```bash
+cd /path/to/target-android-project
+npx -y skills add NBXXF/android-skills --all --copy
+```
+
+More examples are documented in `usecase/npx/README.md`.
 
 ## Install With Library Skills
 
@@ -52,7 +90,7 @@ This repository is the shared Android engineering rule set. Library-specific ski
 https://github.com/<owner>/<library-repo>/tree/<branch>/skills
 ```
 
-For Android projects that use additional library skills, install both repositories. The install scripts use separate Codex markers and separate caches, so they can coexist in the same `AGENTS.md`.
+For Android projects that use additional library skills, install both repositories. Install scripts should use separate Codex markers, so they can coexist in the same `AGENTS.md`.
 
 ```bash
 git clone https://github.com/NBXXF/android-skills.git /path/to/android-skills

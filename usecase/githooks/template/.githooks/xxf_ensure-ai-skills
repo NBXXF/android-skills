@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+#
+# Best-effort AI skill bootstrap for local Git hooks.
+# This script must never block the underlying Git operation.
+
+set +e
+
+hook_name="${1:-git-hook}"
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [[ -z "$repo_root" ]]; then
+    exit 0
+fi
+
+cd "$repo_root" 2>/dev/null || exit 0
+
+git_dir="$(git rev-parse --git-dir 2>/dev/null)"
+case "$git_dir" in
+    /*)
+        ;;
+    *)
+        git_dir="$repo_root/$git_dir"
+        ;;
+esac
+
+log_file="$git_dir/ai-skills-hook.log"
+lock_dir="$git_dir/xxf-ai-skills-hook.lock"
+root_setup_script="$repo_root/setup-ai-skills.sh"
+fallback_setup_script="$repo_root/.githooks/setup-ai-skills.sh"
+
+log() {
+    printf '[%s] %s: %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$hook_name" "$*" >>"$log_file" 2>/dev/null || true
+}
+
+log "invoked"
+
+if ! mkdir "$lock_dir" 2>/dev/null; then
+    lock_pid=""
+    if [[ -r "$lock_dir/pid" ]]; then
+        read -r lock_pid <"$lock_dir/pid" || lock_pid=""
+    fi
+
+    case "$lock_pid" in
+        ''|*[!0-9]*)
+            ;;
+        *)
+            if kill -0 "$lock_pid" 2>/dev/null; then
+                log "setup-ai-skills.sh is already running with pid $lock_pid, skip this trigger"
+                exit 0
+            fi
+            ;;
+    esac
+
+    rm -rf "$lock_dir" 2>/dev/null || true
+    if ! mkdir "$lock_dir" 2>/dev/null; then
+        log "setup-ai-skills.sh lock is busy, skip this trigger"
+        exit 0
+    fi
+fi
+printf '%s\n' "$$" >"$lock_dir/pid" 2>/dev/null || true
+trap 'rm -rf "$lock_dir" 2>/dev/null || true' EXIT
+
+if [[ -f "$root_setup_script" ]]; then
+    setup_script="$root_setup_script"
+    log "using root setup-ai-skills.sh"
+elif [[ -f "$fallback_setup_script" ]]; then
+    setup_script="$fallback_setup_script"
+    log "root setup-ai-skills.sh missing, using .githooks/setup-ai-skills.sh"
+else
+    log "setup-ai-skills.sh missing in root and .githooks, skip setup"
+    exit 0
+fi
+
+log "running $setup_script"
+GIT_TERMINAL_PROMPT=0 bash "$setup_script" >>"$log_file" 2>&1
+status=$?
+
+if [[ $status -eq 0 ]]; then
+    log "setup-ai-skills.sh finished successfully"
+else
+    log "setup-ai-skills.sh failed with status $status; git operation continues"
+fi
+
+exit 0
