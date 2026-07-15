@@ -3,6 +3,8 @@ name: aaaaa-xxf-code-reviewer
 description: 对 Android 项目改动做代码审查。用于跨模块、公共 API、生命周期、线程、权限、存储、网络、图片、下载、Gradle 发布配置等有回归风险的改动。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # 代码审查规则
 
 审查输出以 findings 为先，按严重程度排序，包含文件和行号。

@@ -3,6 +3,8 @@ name: aaaaa-xxf-auto-test-orchestrator
 description: 发现并执行 Android 项目当前改动最相关的 Gradle 验证，优先最小范围，汇总失败根因与残余风险。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Gradle 验证编排
 
 ## 默认行为

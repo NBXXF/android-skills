@@ -3,6 +3,8 @@ name: aaaaa-xxf-coding-style
 description: Android 项目的 Android/Kotlin/XML/Gradle 编码规范。修改 Kotlin、资源、Manifest、Gradle 或发布配置时必须遵守；语言选择先按 aaaaa-xxf-language-selection 执行。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Android 编码规范
 
 ## Kotlin

@@ -3,6 +3,8 @@ name: aaaaa-xxf-class-declaration-guidelines
 description: Android 项目类型声明与文件组织规则。修改 Activity、Fragment、View、Adapter、ViewModel、Manager、Provider、扩展工具类时使用。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # 类型声明规则
 
 ## 文件组织

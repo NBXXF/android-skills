@@ -3,6 +3,8 @@ name: aaaaa-xxf-code-shrinking-guard
 description: 强制审计 Android app、工程内 Android/JVM library 和可发布 Maven library 的 R8/ProGuard 兼容性。凡新增或修改反射、运行时注解、泛型类型解析、ServiceLoader/JNI/序列化、按名称访问、依赖注入、路由、插件发现、Gradle 混淆或发布配置时必须使用；即使用户未提混淆也必须检查规则归属，并按模块类型完成 app rules、consumer rules、产物内容和 minified 集成验证。遇到 Retrofit service 时必须强制进入 response-type-keeper 专项流程。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # R8/ProGuard 强制门禁
 
 ## 强制条件

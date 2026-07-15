@@ -3,6 +3,8 @@ name: aaaaa-xxf-risk-gate
 description: 为 Android 项目改动给出合并/发布风险结论。用于公共库发布、基础模块、权限隐私、网络下载、数据库、图片相机、Gradle 配置等风险判断。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # 风险门禁
 
 ## 结论等级

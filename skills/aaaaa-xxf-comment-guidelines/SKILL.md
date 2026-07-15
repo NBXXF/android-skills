@@ -3,6 +3,8 @@ name: aaaaa-xxf-comment-guidelines
 description: Android 项目注释规范。用于要求和补充类、方法、字段、属性、复杂逻辑的中文注释风格。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # 注释规范
 
 ## 总原则

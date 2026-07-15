@@ -3,6 +3,8 @@ name: aaaaa-xxf-android-performance-gate
 description: Android 项目性能风险门禁。用于 UI 渲染、RecyclerView、图片、启动、主线程、下载/网络热路径、数据库和大文件处理改动。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Android 性能门禁
 
 ## 自动触发

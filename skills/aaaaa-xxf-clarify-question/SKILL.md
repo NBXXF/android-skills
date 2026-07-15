@@ -3,6 +3,8 @@ name: aaaaa-xxf-clarify-question
 description: Android 项目编码任务中的澄清与用户决策记录流程。用于方案不确定、结论冲突、技术选型分歧、业务规则无法从代码事实推导时，先提示用户抉择，并把决策记录到对应模块的 vibe-coding-clarify.md。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # 澄清问题与决策记录
 
 ## 触发场景

@@ -3,6 +3,8 @@ name: aaaaa-xxf-unit-test-writer
 description: 为 Android 项目改动补最小有效回归测试。用于 Kotlin 逻辑、Java 转 Kotlin 迁移、权限/文件/网络边界、数据转换、线程调度和公共 API 行为变更。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # 单测补写
 
 ## 何时补测

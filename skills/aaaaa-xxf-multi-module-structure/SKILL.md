@@ -3,6 +3,8 @@ name: aaaaa-xxf-multi-module-structure
 description: Android 多模块工程结构设计规则。用于新建工程、单体拆分、多模块重构、模块职责归类、app/feature/data/core/domain/optional/demo 等模块分层、命名和依赖方向判断。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Android 多模块工程结构
 
 ## 先判断工程类型

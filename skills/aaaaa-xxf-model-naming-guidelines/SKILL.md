@@ -3,6 +3,8 @@ name: aaaaa-xxf-model-naming-guidelines
 description: Android 项目领域模型命名规范。用于 VO、DTO、PO、DO、BO、Entity 等分层模型命名与职责划分。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # 模型命名规则
 
 ## 总原则

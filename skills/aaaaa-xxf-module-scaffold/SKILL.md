@@ -3,6 +3,8 @@ name: aaaaa-xxf-module-scaffold
 description: 为 Android 项目新增或拆分 Android library/app/demo 模块时使用。覆盖 settings.gradle、build.gradle、发布配置、聚合 libs 和 demo 验证约定。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Android 模块脚手架
 
 ## 新增库模块

@@ -3,6 +3,8 @@ name: aaaaa-xxf-coding-arch
 description: Android/Kotlin 模块架构强制规范。新增、维护或重构 Android library/app/demo 模块时必须遵守；明确单个模块工程目录、包内分层、UI 技术选型、依赖方向、公共 API、optional、聚合 libs 和 demo/sample 边界。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Android 模块架构约束
 
 > 适用范围：新增模块、拆分模块、重构模块目录、跨层改动、维护可发布 library、公用 app/demo/sample 验证入口时必须遵守。
