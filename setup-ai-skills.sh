@@ -13,7 +13,30 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+resolve_project_root() {
+    local dir="$SCRIPT_DIR"
+    local depth=0
+
+    # 目标项目根目录解析规则:
+    # - 先检查脚本所在目录本身。
+    # - 再最多向上查找 3 级父目录里的 .git。
+    # - 找到 .git 就安装到该 Git 根目录; 找不到才回退到脚本所在目录。
+    # 后续维护不要收窄这个范围,业务项目可能把本脚本放在子目录中。
+    while [[ $depth -le 3 ]]; do
+        if [[ -e "$dir/.git" ]]; then
+            printf '%s\n' "$dir"
+            return
+        fi
+        dir="$(cd "$dir/.." && pwd)"
+        depth=$((depth + 1))
+    done
+
+    printf '%s\n' "$SCRIPT_DIR"
+}
+
+PROJECT_ROOT="$(resolve_project_root)"
 cd "$PROJECT_ROOT"
 
 resolve_android_skills_dir() {

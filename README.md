@@ -69,6 +69,8 @@ cd /path/to/target-android-project
 ANDROID_SKILLS_DIR=/path/to/android-skills ./setup-ai-skills.sh
 ```
 
+The script may also live below the target project root. It checks its own directory first, then searches upward for `.git` up to three parent levels and installs into that Git root. If no `.git` is found, it falls back to the script directory.
+
 This script is intentionally a no-Node.js replacement for `npx skills add`. Do not change internal `setup-ai-skills.sh` implementations to call `npx`, `npm`, or Node.js.
 
 ### 3. Optional `npx skills`
