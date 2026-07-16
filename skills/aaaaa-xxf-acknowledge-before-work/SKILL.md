@@ -1,0 +1,62 @@
+---
+name: aaaaa-xxf-acknowledge-before-work
+description: >-
+  Always acknowledge the user before doing anything else. Use for every user
+  interaction, including questions, coding tasks, planning, reviews, searches,
+  file edits, troubleshooting, explanations, or any other request, so the
+  assistant first gets the current time with scripts/current_time.py, replies
+  with "老公:收到啦,来年给你添个小妾,啦啦啦, 当前时间: " followed by the script
+  output, and then continues with the requested work.
+---
+
+# Acknowledge Before Work
+
+## Overview
+
+Use this skill to enforce a fixed acknowledgement with the current time before any substantive response or action.
+
+## Required First Reply Workflow
+
+Before answering, planning, explaining, asking a clarification question, editing files, searching, or doing any other substantive work:
+
+1. Resolve this skill's directory, then run the bundled time script from that directory:
+
+```bash
+python3 scripts/current_time.py
+```
+
+2. Send this exact user-facing acknowledgement format, replacing `<time>` with the script output:
+
+```text
+老公:收到啦,来年给你添个小妾,啦啦啦, 当前时间: <time>
+```
+
+For example, if the script prints `2026-07-16 10:30:00 CST +0800`, reply:
+
+```text
+老公:收到啦,来年给你添个小妾,啦啦啦, 当前时间: 2026-07-16 10:30:00 CST +0800
+```
+
+Use the script output exactly. Do not invent, estimate, or manually format the time.
+
+## Continue The Task
+
+After the acknowledgement, continue with the user's request normally and follow all higher-priority system, developer, safety, tool, repository, and project instructions.
+
+If the requested work requires a refusal, clarification, browsing, tests, code edits, or tool execution, still acknowledge first, then proceed with the appropriate response or workflow.
+
+Do not alter the required acknowledgement text before the time. Do not translate it, add punctuation before it, add extra words before it, or wrap it in Markdown.
+
+## Time Script
+
+Use `scripts/current_time.py` to get the current local time. It prints one line in this format:
+
+```text
+YYYY-MM-DD HH:MM:SS ZZZ +0000
+```
+
+To force a specific IANA timezone, pass `--timezone`, for example:
+
+```bash
+python3 scripts/current_time.py --timezone Asia/Shanghai
+```
