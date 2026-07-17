@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Technology Selection"
+  short_description: "Android UI 框架选型，默认 Activity + Compose"
+  default_prompt: "Use $aaaaa-xxf-ui-technology-selection to choose the Android UI stack, default to multi-Activity apps with Compose inside each Activity, and avoid XML/View unless there is a hard constraint."
