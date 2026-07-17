@@ -21,6 +21,10 @@ EXT_VERSION_RE = re.compile(
     r'^\s*(?:ext\.|extra\[["\'][^"\']*version[^"\']*["\']\]\s*=)\s*["\']([^"\']+)["\']',
     re.IGNORECASE,
 )
+ANDROID_SDK_LITERAL_RE = re.compile(
+    r'^\s*(compileSdk|compileSdkVersion|minSdk|minSdkVersion|targetSdk|targetSdkVersion)'
+    r'\s*(?:=|\s)\s*(\d+)\b'
+)
 CLASS_PATH_RE = re.compile(r'^\s*classpath\s*(?:\(|\s)\s*["\']([^"\']+:[^"\']+:[^"\']+)["\']')
 LITERAL_COORD_RE = re.compile(r'["\']([^"\']+:[^"\']+:[^"\']+)["\']')
 
@@ -87,6 +91,10 @@ def check_file(path: Path):
         if match:
             findings.append((lineno, f"ext version literal '{match.group(1)}'"))
             continue
+        match = ANDROID_SDK_LITERAL_RE.search(line)
+        if match:
+            findings.append((lineno, f"hardcoded Android SDK value '{match.group(1)} {match.group(2)}'"))
+            continue
         if "version" in line.lower() and "libs." not in line and "version.ref" not in line and "libs.versions" not in line:
             for coord in LITERAL_COORD_RE.findall(line):
                 if coord.count(":") == 2:
@@ -120,7 +128,10 @@ def main() -> int:
         for item in all_findings:
             print(f"- {item}")
         print()
-        print("Move coordinates and versions into libs.versions.toml, then replace build-file literals with aliases.")
+        print(
+            "Move dependency coordinates and dependency/plugin versions into libs.versions.toml. "
+            "Move Android SDK versions into root gradle.properties, then replace build-file literals."
+        )
         return 1
 
     print("No hardcoded Gradle dependency or version violations found.")
