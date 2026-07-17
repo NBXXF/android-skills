@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 语言选择"
+  short_description: "默认使用 Kotlin，维护 Java 时优先迁移"
+  default_prompt: "使用 $aaaaa-xxf-language-selection 约束 Android 项目源码语言选择：新增默认 Kotlin，避免新增 Java，触达 Java 维护时优先转换为 Kotlin 并完成验证。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 测试策略"
+  short_description: "选择 Android 改动的最小有效测试和 Gradle 验证"
+  default_prompt: "使用 $aaaaa-xxf-test-strategy 为 Kotlin、Java 转 Kotlin、Android 资源或 Gradle 改动选择最小有效测试和 Gradle 验证范围。"

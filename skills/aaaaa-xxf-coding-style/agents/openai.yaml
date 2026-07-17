@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 编码规范"
+  short_description: "规范 Android/Kotlin/XML/Gradle 代码风格"
+  default_prompt: "使用 $aaaaa-xxf-coding-style 约束 Android 项目的 Kotlin、资源、Manifest、Gradle 和发布配置改动，并先遵守语言选择规则。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 交付总控"
+  short_description: "串起 Android 编码、测试、验证、审查和风险门禁"
+  default_prompt: "使用 $aaaaa-xxf-delivery-loop 处理 Android 项目的 bugfix、功能开发、重构和回归修复，串起相关 skill、测试、Gradle 验证、代码审查与风险门禁。"

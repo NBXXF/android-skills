@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gradle 验证编排"
+  short_description: "选择并执行当前改动最相关的 Android Gradle 验证"
+  default_prompt: "使用 $aaaaa-xxf-auto-test-orchestrator 发现并执行 Android 项目当前改动最相关的最小 Gradle 验证，并汇总失败根因与残余风险。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "模型命名规则"
+  short_description: "规范 Android 领域模型命名和分层职责"
+  default_prompt: "使用 $aaaaa-xxf-model-naming-guidelines 规范 Android 项目中 VO、DTO、PO、DO、BO、Entity 等领域模型命名与职责划分。"

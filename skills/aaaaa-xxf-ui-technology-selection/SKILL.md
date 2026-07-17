@@ -3,6 +3,8 @@ name: aaaaa-xxf-ui-technology-selection
 description: Android UI technology selection and default implementation guidance. Use when choosing or changing the UI stack for Android screens. Default to multi-Activity apps with Activity-hosted Jetpack Compose screens, and use XML/View only for hard constraints.
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # UI Technology Selection
 
 ## Default Choice

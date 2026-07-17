@@ -1,0 +1,4 @@
+interface:
+  display_name: "注释规范"
+  short_description: "规范 Android 项目中文注释风格"
+  default_prompt: "使用 $aaaaa-xxf-comment-guidelines 为 Android 项目中的类、方法、字段、属性和复杂逻辑补充必要且准确的中文注释。"

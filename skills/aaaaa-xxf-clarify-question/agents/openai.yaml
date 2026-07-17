@@ -1,0 +1,4 @@
+interface:
+  display_name: "澄清问题与决策记录"
+  short_description: "处理 Android 编码任务中的澄清和决策记录"
+  default_prompt: "使用 $aaaaa-xxf-clarify-question 在 Android 编码任务中处理无法从代码事实推导的业务规则、方案分歧或技术选型，并记录用户决策。"

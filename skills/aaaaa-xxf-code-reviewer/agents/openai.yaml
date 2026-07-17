@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 代码审查"
+  short_description: "审查 Android 改动的回归风险和缺失验证"
+  default_prompt: "使用 $aaaaa-xxf-code-reviewer 对 Android 改动做代码审查，优先发现跨模块、公共 API、生命周期、线程、权限、存储、网络、图片、下载和发布配置风险。"

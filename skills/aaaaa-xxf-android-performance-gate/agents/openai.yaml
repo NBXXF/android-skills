@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 性能门禁"
+  short_description: "检查 Android UI、图片、启动和热路径性能风险"
+  default_prompt: "使用 $aaaaa-xxf-android-performance-gate 审查 Android 改动中的 UI 渲染、RecyclerView、图片、启动、主线程、网络、数据库和大文件处理性能风险。"

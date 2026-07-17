@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 模块脚手架"
+  short_description: "新增或拆分 Android library、app、demo 模块"
+  default_prompt: "使用 $aaaaa-xxf-module-scaffold 为 Android 项目新增或拆分 library、app、demo 模块，并同步 settings.gradle、build.gradle、发布配置、聚合 libs 和 demo 验证约定。"

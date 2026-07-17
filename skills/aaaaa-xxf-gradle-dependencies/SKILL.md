@@ -3,6 +3,8 @@ name: aaaaa-xxf-gradle-dependencies
 description: Android Gradle dependency, version-catalog, version freshness, and shared Android SDK configuration governance. Use when editing build.gradle(.kts), settings.gradle(.kts), libs.versions.toml, gradle.properties, plugin versions, dependency coordinates, Gradle/Android build plugin versions, compileSdk/minSdk/targetSdk values, or when hardcoded versions, duplicate declarations, stale versions, or legacy direct dependency strings must be detected and migrated.
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Gradle Dependencies
 
 ## Goal
@@ -79,7 +81,7 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 Use the bundled scanner before or after dependency edits:
 
 ```bash
-python3 .agents/skills/aaaaa-xxf-gradle-dependencies/scripts/scan_gradle_dependencies.py <repo-root>
+python3 scripts/scan_gradle_dependencies.py <repo-root>
 ```
 
 The scanner must flag:

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 单测补写"
+  short_description: "为 Android 逻辑改动补最小有效回归测试"
+  default_prompt: "使用 $aaaaa-xxf-unit-test-writer 为 Android 项目的 Kotlin 逻辑、Java 转 Kotlin、权限/文件/网络边界、数据转换、线程调度和公共 API 行为变更补最小有效回归测试。"

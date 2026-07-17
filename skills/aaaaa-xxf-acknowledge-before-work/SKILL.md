@@ -9,6 +9,8 @@ description: >-
   output, and then continues with the requested work.
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Acknowledge Before Work
 
 ## Overview

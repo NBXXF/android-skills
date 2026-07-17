@@ -1,0 +1,4 @@
+interface:
+  display_name: "类型声明规则"
+  short_description: "规范 Android/Kotlin 类型声明和文件组织"
+  default_prompt: "使用 $aaaaa-xxf-class-declaration-guidelines 规范 Activity、Fragment、View、Adapter、ViewModel、Manager、Provider 和扩展工具类的类型声明与文件组织。"

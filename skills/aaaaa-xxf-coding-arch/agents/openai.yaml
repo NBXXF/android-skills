@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 模块架构"
+  short_description: "约束 Android/Kotlin 模块分层、依赖方向和公共 API"
+  default_prompt: "使用 $aaaaa-xxf-coding-arch 维护 Android library、app 或 demo 模块的目录结构、包内分层、依赖方向、公共 API 和验证边界。"
