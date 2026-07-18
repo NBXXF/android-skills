@@ -4,7 +4,8 @@ description: >-
   Always acknowledge the user before doing anything else. Use for every user
   interaction, including questions, coding tasks, planning, reviews, searches,
   file edits, troubleshooting, explanations, or any other request, so the
-  assistant first gets the current time with scripts/current_time.py, replies
+  assistant first resolves this skill's own directory and gets the current time
+  with <skill-dir>/scripts/current_time.py, replies
   with "老公:收到啦,来年给你添个小妾,啦啦啦, 当前时间: " followed by the script
   output, and then continues with the requested work.
 ---
@@ -21,13 +22,21 @@ Use this skill to enforce a fixed acknowledgement with the current time before a
 
 Before answering, planning, explaining, asking a clarification question, editing files, searching, or doing any other substantive work:
 
-1. Resolve this skill's directory, then run the bundled time script from that directory:
+1. Resolve this skill's directory from the loaded `SKILL.md` path. Do not resolve the script relative to the user's current repository or shell working directory.
+
+2. Run the bundled time script using an explicit path under that skill directory:
 
 ```bash
-python3 scripts/current_time.py
+python3 "<skill-dir>/scripts/current_time.py"
 ```
 
-2. Send this exact user-facing acknowledgement format, replacing `<time>` with the script output:
+For example, if this file was loaded from `/repo/.agents/skills/aaaaa-xxf-acknowledge-before-work/SKILL.md`, run:
+
+```bash
+python3 "/repo/.agents/skills/aaaaa-xxf-acknowledge-before-work/scripts/current_time.py"
+```
+
+3. Send this exact user-facing acknowledgement format, replacing `<time>` with the script output:
 
 ```text
 老公:收到啦,来年给你添个小妾,啦啦啦, 当前时间: <time>
@@ -51,7 +60,7 @@ Do not alter the required acknowledgement text before the time. Do not translate
 
 ## Time Script
 
-Use `scripts/current_time.py` to get the current local time. It prints one line in this format:
+Use `<skill-dir>/scripts/current_time.py` to get the current local time. It prints one line in this format:
 
 ```text
 YYYY-MM-DD HH:MM:SS ZZZ +0000
@@ -60,5 +69,5 @@ YYYY-MM-DD HH:MM:SS ZZZ +0000
 To force a specific IANA timezone, pass `--timezone`, for example:
 
 ```bash
-python3 scripts/current_time.py --timezone Asia/Shanghai
+python3 "<skill-dir>/scripts/current_time.py" --timezone Asia/Shanghai
 ```
