@@ -8,11 +8,19 @@ from pathlib import Path
 
 
 DEPENDENCY_CALL_RE = re.compile(
-    r'^\s*(api|implementation|compileOnly|runtimeOnly|kapt|ksp|'
-    r'testImplementation|androidTestImplementation|debugImplementation|releaseImplementation)'
+    r'^\s*([A-Za-z0-9_]*(?:api|implementation|compileOnly|runtimeOnly|annotationProcessor|kapt|ksp|'
+    r'testImplementation|androidTestImplementation|debugImplementation|releaseImplementation))'
     r'\s*(?:\(|\s)\s*["\']([^"\']+:[^"\']+:[^"\']+)["\']'
 )
-PLUGIN_VERSION_RE = re.compile(r'^\s*id\s*\(\s*["\'][^"\']+["\']\s*\)\s*version\s*["\']([^"\']+)["\']')
+ADD_DEPENDENCY_RE = re.compile(
+    r'^\s*add\s*\(\s*["\'][^"\']+["\']\s*,\s*["\']([^"\']+:[^"\']+:[^"\']+)["\']'
+)
+PLUGIN_VERSION_RE = re.compile(
+    r'\bid\s*(?:\(\s*)?["\'][^"\']+["\']\s*\)?\s*version\s*["\']([^"\']+)["\']'
+)
+ALIAS_PLUGIN_VERSION_RE = re.compile(
+    r'\balias\s*\(\s*libs\.plugins\.[^)]+\)\s*version\s*["\']([^"\']+)["\']'
+)
 VERSION_CONST_RE = re.compile(
     r'^\s*(?:val|var|def)\s+([A-Za-z0-9_]*version[A-Za-z0-9_]*)\s*=\s*["\']([^"\']+)["\']',
     re.IGNORECASE,
@@ -22,11 +30,39 @@ EXT_VERSION_RE = re.compile(
     re.IGNORECASE,
 )
 ANDROID_SDK_LITERAL_RE = re.compile(
-    r'^\s*(compileSdk|compileSdkVersion|minSdk|minSdkVersion|targetSdk|targetSdkVersion)'
+    r'\b(compileSdk|compileSdkVersion|minSdk|minSdkVersion|targetSdk|targetSdkVersion)'
     r'\s*(?:=|\s)\s*(\d+)\b'
 )
 CLASS_PATH_RE = re.compile(r'^\s*classpath\s*(?:\(|\s)\s*["\']([^"\']+:[^"\']+:[^"\']+)["\']')
 LITERAL_COORD_RE = re.compile(r'["\']([^"\']+:[^"\']+:[^"\']+)["\']')
+DYNAMIC_VERSION_RE = re.compile(
+    r'["\']([^"\']+:[^"\']+:(?:\+|latest\.release|latest\.integration|[^"\']*-SNAPSHOT))["\']',
+    re.IGNORECASE,
+)
+SENSITIVE_LITERAL_RE = re.compile(
+    r'^\s*(?:val|var|def)?\s*'
+    r'([A-Za-z0-9_.\-\[\]"\']*(?:password|passwd|pwd|username|userName|token|secret|'
+    r'credential|signing|keyAlias|keyPassword|storePassword)[A-Za-z0-9_.\-\[\]"\']*)'
+    r'\s*(?:=|:)\s*["\']([^"\']+)["\']',
+    re.IGNORECASE,
+)
+GRADLE_CREDENTIAL_METHOD_RE = re.compile(
+    r'^\s*(username|password)\s*(?:=|\s)\s*["\']([^"\']+)["\']',
+    re.IGNORECASE,
+)
+REPOSITORY_URL_RE = re.compile(
+    r'^\s*(?:setUrl\s*\(|url\s*(?:=|\s)\s*(?:uri\s*\()?|uri\s*\()\s*["\'](https?://[^"\']+)["\']',
+    re.IGNORECASE,
+)
+PUBLISHING_METADATA_RE = re.compile(
+    r'^\s*(group|version|artifactId|artifact|scmUrl|POM_[A-Za-z0-9_]+|pom[A-Za-z0-9_]*)'
+    r'\s*(?:=|\s)\s*["\']([^"\']+)["\']'
+)
+REPOSITORY_HINT_RE = re.compile(
+    r'(maven|nexus|sonatype|artifactory|github\.com/.+/packages|pkg\.github\.com|'
+    r'packages|snapshot|release|repo)',
+    re.IGNORECASE,
+)
 
 SKIP_DIRS = {
     ".git",
@@ -71,13 +107,25 @@ def check_file(path: Path):
     for lineno, line in enumerate(lines, start=1):
         if path.suffix == ".toml":
             continue
+        match = DYNAMIC_VERSION_RE.search(line)
+        if match:
+            findings.append((lineno, f"dynamic or snapshot dependency version '{match.group(1)}'"))
+            continue
         match = DEPENDENCY_CALL_RE.search(line)
         if match:
             findings.append((lineno, f"hardcoded dependency coordinate '{match.group(2)}'"))
             continue
+        match = ADD_DEPENDENCY_RE.search(line)
+        if match:
+            findings.append((lineno, f"hardcoded dependency coordinate '{match.group(1)}'"))
+            continue
         match = CLASS_PATH_RE.search(line)
         if match:
             findings.append((lineno, f"hardcoded classpath coordinate '{match.group(1)}'"))
+            continue
+        match = ALIAS_PLUGIN_VERSION_RE.search(line)
+        if match:
+            findings.append((lineno, f"hardcoded alias plugin version override '{match.group(1)}'"))
             continue
         match = PLUGIN_VERSION_RE.search(line)
         if match:
@@ -94,6 +142,25 @@ def check_file(path: Path):
         match = ANDROID_SDK_LITERAL_RE.search(line)
         if match:
             findings.append((lineno, f"hardcoded Android SDK value '{match.group(1)} {match.group(2)}'"))
+            continue
+        match = SENSITIVE_LITERAL_RE.search(line)
+        if match and match.group(2).strip():
+            findings.append((lineno, f"hardcoded sensitive Gradle property '{match.group(1)}'"))
+            continue
+        match = GRADLE_CREDENTIAL_METHOD_RE.search(line)
+        if match and match.group(2).strip():
+            findings.append((lineno, f"hardcoded repository credential '{match.group(1)}'"))
+            continue
+        match = REPOSITORY_URL_RE.search(line)
+        if match and REPOSITORY_HINT_RE.search(match.group(1)):
+            findings.append((lineno, f"hardcoded publishing/repository URL '{match.group(1)}'"))
+            continue
+        match = PUBLISHING_METADATA_RE.search(line)
+        if match and not any(
+            token in line
+            for token in ("findProperty", "gradleProperty", "project.", "providers.", "property(")
+        ):
+            findings.append((lineno, f"hardcoded publishing/build metadata '{match.group(1)}' = '{match.group(2)}'"))
             continue
         if "version" in line.lower() and "libs." not in line and "version.ref" not in line and "libs.versions" not in line:
             for coord in LITERAL_COORD_RE.findall(line):
@@ -130,11 +197,13 @@ def main() -> int:
         print()
         print(
             "Move dependency coordinates and dependency/plugin versions into libs.versions.toml. "
-            "Move Android SDK versions into root gradle.properties, then replace build-file literals."
+            "Move Android SDK versions, reusable publishing metadata, repository URLs, and non-secret "
+            "build constants into root gradle.properties. Resolve credentials and signing secrets from "
+            "user-level Gradle properties or CI secrets, then replace build-file literals."
         )
         return 1
 
-    print("No hardcoded Gradle dependency or version violations found.")
+    print("No hardcoded Gradle dependency, version, credential, or shared configuration violations found.")
     return 0
 
 

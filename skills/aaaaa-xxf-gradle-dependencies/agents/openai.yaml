@@ -1,4 +1,4 @@
 interface:
   display_name: "Gradle Dependencies"
-  short_description: "Gradle 依赖集中管理与版本目录强制化"
-  default_prompt: "Use $aaaaa-xxf-gradle-dependencies to move hardcoded Gradle dependencies and dependency/plugin version literals into libs.versions.toml, keep touched catalog entries on the latest stable compatible versions or document pinned-version blockers, centralize Android SDK versions in root gradle.properties, then flag any legacy violations with file and line references."
+  short_description: "Gradle 依赖、发布配置与密钥外提治理"
+  default_prompt: "Use $aaaaa-xxf-gradle-dependencies to move hardcoded Gradle dependencies and plugin versions into libs.versions.toml, centralize reusable SDK/publishing/build configuration in gradle.properties, externalize credentials through Gradle properties or CI secrets, and flag legacy violations with file and line references."

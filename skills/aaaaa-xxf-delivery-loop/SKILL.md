@@ -18,7 +18,7 @@ description: 处理 Android 项目中的通用编码任务交付流程。用于 
 1. 读受影响可发布 library 模块对应的 `xxf-*` 模块 skill，定位路径、发布脚本、依赖边界、关联 demo 和验证入口。
 2. 如果改动涉及 Android UI 技术选型、新页面架构、Compose/XML/Fragment/Activity 取舍，先读 `aaaaa-xxf-ui-technology-selection`。
 3. 读 `aaaaa-xxf-language-selection`，新增源码默认使用 Kotlin；维护触达 Java 时优先直接转换为 `.kt` 文件。
-4. 读 `aaaaa-xxf-coding-style` 与 `aaaaa-xxf-coding-arch`，按本仓库 Kotlin/XML/Gradle 约束实现最小改动。
+4. 读 `aaaaa-xxf-coding-style`、`aaaaa-xxf-coding-arch` 与 `aaaaa-xxf-comment-guidelines`，按本仓库 Kotlin/XML/Gradle 约束实现最小改动，并在源码改动中同步补齐必要中文注释。
 5. 涉及 Activity/Fragment/View/ViewModel/Adapter 等类型声明时，读 `aaaaa-xxf-class-declaration-guidelines`。
 6. 涉及 VO/DTO/PO/DO/BO/Entity/Query/Command 等领域模型命名时，读 `aaaaa-xxf-model-naming-guidelines`。
 7. 需要判断测试范围时读 `aaaaa-xxf-test-strategy`；需要补测时读 `aaaaa-xxf-unit-test-writer`。
