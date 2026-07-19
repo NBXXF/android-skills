@@ -1,0 +1,4 @@
+interface:
+  display_name: "Google Play 合规门禁"
+  short_description: "规避和修复 Android 上架审核合规风险"
+  default_prompt: "使用 $aaaaa-xxf-google-play-compliance-gate 审查 Android 项目的 Google Play 上架合规风险，并在既有问题需要业务取舍时提示我决策。"
