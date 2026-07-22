@@ -5,3 +5,9 @@
 /.agents/
 /AGENTS.md
 /outputs/
+# Generated shared AI skills
+/.android-skills-fetch*/
+.agents/skills/aaaaa-xxf-*/
+.claude/skills/aaaaa-xxf-*/
+.codex/skills/aaaaa-xxf-*/
+agent/skills/aaaaa-xxf-*/
