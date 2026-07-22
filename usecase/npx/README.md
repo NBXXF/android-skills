@@ -236,10 +236,13 @@ remove --all              卸载全部已安装 skill
 
 项目内部的 `setup-ai-skills.sh` 不依赖 npx / npm / Node.js。后续维护不要把内部脚本改成 `npx skills add ...`，因为目标机器不一定有 npx。
 
-内部脚本应继续从本地 `android-skills` checkout 的 `skills/` 目录直接拷贝：
+内部脚本应继续使用当前项目的 `agent/skills` 作为中转缓存，再复制到 `.agents/skills` 和 `.claude/skills`：
 
 ```bash
-ANDROID_SKILLS_DIR=/path/to/android-skills ./setup-ai-skills.sh
+rm -rf agent/skills
+mkdir -p agent
+cp -R /path/to/android-skills/skills agent/skills
+./setup-ai-skills.sh
 test -f .agents/skills/aaaaa-xxf-delivery-loop/SKILL.md
 test -f .claude/skills/aaaaa-xxf-delivery-loop/SKILL.md
 ```

@@ -29,11 +29,13 @@ usecase/gradle/template/gradle/
 
 ## 接入方式
 
-在目标 Android 项目根目录执行。`ANDROID_SKILLS_DIR` 改成 `android-skills` 仓库本地路径：
+在目标 Android 项目根目录执行。`ANDROID_SKILLS_DIR` 改成 `android-skills` 仓库本地路径。团队项目建议提交 `agent/skills` 缓存，Gradle 自动执行时不依赖 npx，也不依赖某台机器上的固定 checkout 路径：
 
 ```bash
 ANDROID_SKILLS_DIR=/path/to/android-skills
-mkdir -p gradle
+rm -rf agent/skills
+mkdir -p agent gradle
+cp -R "$ANDROID_SKILLS_DIR/skills" agent/skills
 cp "$ANDROID_SKILLS_DIR/usecase/gradle/template/gradle/xxf_ensure-ai-skills.gradle" gradle/
 cp "$ANDROID_SKILLS_DIR/usecase/gradle/template/gradle/setup-ai-skills.sh" gradle/
 chmod +x gradle/setup-ai-skills.sh
@@ -61,7 +63,7 @@ apply(from = "$rootDir/gradle/xxf_ensure-ai-skills.gradle")
 apply from: "$rootDir/gradle/xxf_ensure-ai-skills.gradle"
 ```
 
-如果项目不希望提交根目录 `setup-ai-skills.sh`，只提交 `gradle/setup-ai-skills.sh` 也可以；脚本会自动走 fallback。
+如果项目不希望提交根目录 `setup-ai-skills.sh`，只提交 `gradle/setup-ai-skills.sh` 也可以；脚本会自动走 fallback。脚本会先确保 `agent/skills` 存在，然后统一从 `agent/skills` 复制到 `.agents/skills` 和 `.claude/skills`。
 
 ## 执行策略
 

@@ -9,7 +9,7 @@
 # - 内部安装流程不得依赖 npx / npm / Node.js,因为目标机器不一定安装这些工具。
 # - 本脚本本质是替代 npx 的无 Node.js 安装入口; 后期修改也不要改成 `npx skills add ...`。
 # - npx 只能作为独立 usecase 文档中的可选安装方式,不能成为内部脚本依赖。
-# - 本脚本只允许从本地 android-skills checkout 的 skills/ 目录直接拷贝文件。
+# - 本脚本只允许先刷新当前项目 agent/skills,再复制到 .agents/skills 和 .claude/skills。
 
 set -euo pipefail
 
@@ -18,12 +18,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 resolve_project_root() {
     local dir="$SCRIPT_DIR"
     local depth=0
+    local git_root
 
     # 目标项目根目录解析规则:
-    # - 先检查脚本所在目录本身。
-    # - 再最多向上查找 3 级父目录里的 .git。
+    # - 优先用 git 根据脚本所在目录解析真实工作区根目录,不依赖当前 shell 的 PWD。
+    # - git 不可用或脚本不在 Git 工作区时,再最多向上查找 3 级父目录里的 .git。
     # - 找到 .git 就安装到该 Git 根目录; 找不到才回退到脚本所在目录。
-    # 后续维护不要收窄这个范围,业务项目可能把本脚本放在子目录中。
+    # 后续维护不要改成使用 PWD,Gradle/Git hook 可能从任意目录触发本脚本。
+    if command -v git >/dev/null 2>&1; then
+        git_root="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+        if [[ -n "$git_root" ]]; then
+            printf '%s\n' "$git_root"
+            return
+        fi
+    fi
+
     while [[ $depth -le 3 ]]; do
         if [[ -e "$dir/.git" ]]; then
             printf '%s\n' "$dir"
@@ -39,43 +48,69 @@ resolve_project_root() {
 PROJECT_ROOT="$(resolve_project_root)"
 cd "$PROJECT_ROOT"
 
-resolve_android_skills_dir() {
+is_skills_root() {
+    local dir="$1"
+    [[ -f "$dir/aaaaa-xxf-delivery-loop/SKILL.md" ]]
+}
+
+resolve_skills_src_dir() {
     if [[ -n "${ANDROID_SKILLS_DIR:-}" ]]; then
-        printf '%s\n' "$ANDROID_SKILLS_DIR"
+        if [[ -d "$ANDROID_SKILLS_DIR/skills" ]] && is_skills_root "$ANDROID_SKILLS_DIR/skills"; then
+            printf '%s\n' "$ANDROID_SKILLS_DIR/skills"
+            return
+        fi
+        if is_skills_root "$ANDROID_SKILLS_DIR"; then
+            printf '%s\n' "$ANDROID_SKILLS_DIR"
+            return
+        fi
+        echo "error: ANDROID_SKILLS_DIR does not contain skills: $ANDROID_SKILLS_DIR" >&2
+        exit 1
+    fi
+
+    if [[ -d "$PROJECT_ROOT/skills" ]] && is_skills_root "$PROJECT_ROOT/skills"; then
+        printf '%s\n' "$PROJECT_ROOT/skills"
         return
     fi
 
-    if [[ -f "$PROJECT_ROOT/install.sh" && -d "$PROJECT_ROOT/skills" ]]; then
-        printf '%s\n' "$PROJECT_ROOT"
+    if [[ -d "$SCRIPT_DIR/skills" ]] && is_skills_root "$SCRIPT_DIR/skills"; then
+        printf '%s\n' "$SCRIPT_DIR/skills"
         return
     fi
 
-    # 个人开发机默认 checkout 位置。保持在 npx/cache 之前作为本地无 Node.js 兜底。
-    # 如果团队机器路径不同,用 ANDROID_SKILLS_DIR 显式覆盖。
-    local default_dir="$HOME/Documents/developer/agent/android-skills"
-    if [[ -f "$default_dir/install.sh" && -d "$default_dir/skills" ]]; then
-        printf '%s\n' "$default_dir"
-        return
-    fi
-
-    echo "error: missing ANDROID_SKILLS_DIR." >&2
-    echo "Run from an android-skills checkout, place it at:" >&2
-    echo "  $HOME/Documents/developer/agent/android-skills" >&2
-    echo "or pass:" >&2
+    echo "error: missing android skills source." >&2
+    echo "Put copied skills in this project cache first:" >&2
+    echo "  mkdir -p agent" >&2
+    echo "  cp -R /path/to/android-skills/skills agent/skills" >&2
+    echo "or pass a local checkout explicitly:" >&2
     echo "  ANDROID_SKILLS_DIR=/path/to/android-skills ./setup-ai-skills.sh" >&2
     exit 1
 }
 
-ANDROID_SKILLS_DIR="$(resolve_android_skills_dir)"
-INSTALL_SCRIPT="$ANDROID_SKILLS_DIR/install.sh"
+STAGED_SKILLS_DIR="$PROJECT_ROOT/agent/skills"
+SKILLS_SRC=""
 
-[[ -f "$INSTALL_SCRIPT" ]] || {
-    echo "error: install.sh not found: $INSTALL_SCRIPT" >&2
+mkdir -p "$STAGED_SKILLS_DIR"
+
+if [[ -d "$STAGED_SKILLS_DIR" ]] && is_skills_root "$STAGED_SKILLS_DIR"; then
+    SKILLS_SRC="$STAGED_SKILLS_DIR"
+else
+    SKILLS_SRC="$(resolve_skills_src_dir)"
+fi
+
+[[ -d "$SKILLS_SRC" ]] || {
+    echo "error: skills source not found: $SKILLS_SRC" >&2
     exit 1
 }
-[[ -d "$ANDROID_SKILLS_DIR/skills" ]] || {
-    echo "error: skills/ not found: $ANDROID_SKILLS_DIR/skills" >&2
-    exit 1
+echo "-> 使用本地 skills 源: $SKILLS_SRC"
+
+build_skills_list() {
+    local item
+    for skill_dir in "$SKILLS_SRC"/aaaaa-xxf-*/; do
+        [[ -d "$skill_dir" ]] || continue
+        [[ -f "$skill_dir/SKILL.md" ]] || continue
+        item="$(basename "$skill_dir")"
+        printf -- "- %s\n" "$item"
+    done
 }
 
 copy_skill_dir() {
@@ -134,45 +169,88 @@ sync_skill_dirs() {
     echo "   -> 同步了 $count 个 skill 到 ${target_dir}"
 }
 
-update_agents_md_codex_skills_dir() {
+refresh_project_skills_cache() {
+    local source_dir="$1"
+
+    if [[ "$source_dir" == "$STAGED_SKILLS_DIR" ]]; then
+        return 0
+    fi
+
+    echo "-> 刷新当前项目 skills 缓存: agent/skills"
+    sync_skill_dirs "$source_dir" "$STAGED_SKILLS_DIR" "agent/skills"
+    SKILLS_SRC="$STAGED_SKILLS_DIR"
+}
+
+write_agents_md_block() {
     local codex_skills_dir="$1"
     local agents_md="AGENTS.md"
+    local marker_begin="<!-- BEGIN: xxf-shared-android-skills (managed by install.sh) -->"
+    local marker_end="<!-- END: xxf-shared-android-skills -->"
+    local skills_list
 
-    [[ "$codex_skills_dir" != ".agents/skills" ]] || return 0
-    [[ -f "$agents_md" ]] || return 0
+    if [[ -f "$agents_md" ]] && grep -qF "$marker_begin" "$agents_md"; then
+        python3 - "$agents_md" "$marker_begin" "$marker_end" <<'PY'
+import pathlib
+import re
+import sys
 
-    perl -0pi -e "s#\\.agents/skills#${codex_skills_dir}#g" "$agents_md"
+path, begin, end = sys.argv[1:]
+text = pathlib.Path(path).read_text()
+pattern = re.compile(r'\n*' + re.escape(begin) + r'.*?' + re.escape(end) + r'\n?', re.DOTALL)
+pathlib.Path(path).write_text(pattern.sub('', text))
+PY
+    fi
+
+    skills_list="$(build_skills_list)"
+
+    {
+        if [[ -f "$agents_md" ]]; then
+            local existing
+            existing="$(cat "$agents_md")"
+            if [[ -n "$existing" ]]; then
+                printf '%s\n\n' "$existing"
+            fi
+        fi
+        echo "$marker_begin"
+        echo "## Shared Android Skills"
+        echo ""
+        echo "Codex discovers these project skills from:"
+        echo ""
+        echo "    ${codex_skills_dir}/<skill-name>/SKILL.md"
+        echo ""
+        echo "For normal Android coding tasks, start with:"
+        echo ""
+        echo "    ${codex_skills_dir}/aaaaa-xxf-delivery-loop/SKILL.md"
+        echo ""
+        echo "Use project-local module or business skills separately when the target repository provides them."
+        echo ""
+        echo "Default expectation: find the pattern, make the smallest correct systematic change, add or repair focused tests when needed, run the narrowest relevant verification, review non-trivial risk, and surface release risk when residual risk remains."
+        echo ""
+        echo "Available shared skills:"
+        echo ""
+        echo "$skills_list"
+        echo "Update skills: update the project agent/skills cache or android-skills checkout, then re-run setup-ai-skills.sh."
+        echo "$marker_end"
+    } > "$agents_md.new"
+    mv "$agents_md.new" "$agents_md"
 }
 
 install_codex_project_skills() {
     local codex_skills_dir="$1"
-    local had_agents_dir=0
 
-    if [[ -d ".agents" ]]; then
-        had_agents_dir=1
-    fi
-
-    bash "$INSTALL_SCRIPT" codex project
-
-    if [[ "$codex_skills_dir" != ".agents/skills" ]]; then
-        sync_skill_dirs ".agents/skills" "$codex_skills_dir" "$codex_skills_dir"
-        if [[ "$had_agents_dir" -eq 0 ]]; then
-            rm -rf ".agents"
-        fi
-        update_agents_md_codex_skills_dir "$codex_skills_dir"
-    fi
+    sync_skill_dirs "$SKILLS_SRC" "$codex_skills_dir" "$codex_skills_dir"
+    write_agents_md_block "$codex_skills_dir"
 }
 
 CODEX_SKILLS_DIR="$(resolve_codex_skills_dir)"
+refresh_project_skills_cache "$SKILLS_SRC"
 
 echo "-> 安装 android-skills AI skills(Codex CLI -> ${CODEX_SKILLS_DIR} · project scope · copy mode)"
 install_codex_project_skills "$CODEX_SKILLS_DIR"
 
 echo ""
 echo "-> 安装 android-skills AI skills(Claude Code -> .claude/skills · project scope · copy mode)"
-bash "$INSTALL_SCRIPT" claude project
-
-sync_skill_dirs "$CODEX_SKILLS_DIR" ".claude/skills" ".claude/skills"
+sync_skill_dirs "$SKILLS_SRC" ".claude/skills" ".claude/skills"
 
 echo ""
 echo "-> 校验关键 skill 文件"
