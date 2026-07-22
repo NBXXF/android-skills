@@ -2,18 +2,32 @@
 #
 # setup-ai-skills.sh
 #
-# 每台新机器 clone 本仓后跑一次。安装后需要重启 claude / codex 进程,
-# `/skills` 能看到 aaaaa-xxf-* 开头的条目即生效。
+# 本脚本是项目无关的 android-skills bootstrap,可以复制到任意目标工程执行。
+# 安装后需要重启 claude / codex 进程,`/skills` 能看到 aaaaa-xxf-* 开头的条目即生效。
 #
 # 硬约束:
+# - 本脚本必须保持项目无关:拷贝到任意 Git 工程后都能自行拉取并安装 android-skills。
+# - 所有缓存和中转目录只能位于当前目标工程的 agent/ 下:
+#   * 远端拉取临时目录: 当前工程/agent/.android-skills-fetch.$$
+#   * 持久缓存目录: 当前工程/agent/skills
+#   * 最终安装目录: 当前工程/.agents/skills 和 当前工程/.claude/skills
+# - 严禁使用用户机器固定路径或个人目录作为缓存/中转/兜底,包括但不限于:
+#   * $HOME/Documents、$HOME/Downloads、/Users/<name>/Documents、/Users/<name>/Downloads
+#   * 系统临时目录 /tmp、$TMPDIR、mktemp 默认目录
 # - 内部安装流程不得依赖 npx / npm / Node.js,因为目标机器不一定安装这些工具。
 # - 本脚本本质是替代 npx 的无 Node.js 安装入口; 后期修改也不要改成 `npx skills add ...`。
 # - npx 只能作为独立 usecase 文档中的可选安装方式,不能成为内部脚本依赖。
-# - 本脚本只允许先刷新当前项目 agent/skills,再复制到 .agents/skills 和 .claude/skills。
+# - 每次运行都必须重新解析来源并强制刷新,不能因为 agent/skills 已存在就跳过。
+# - agent/skills 只是本次刷新后的持久缓存,严禁把旧 agent/skills 当成本次安装来源。
+# - 没有本地显式来源时,只能用 git 拉取 ANDROID_SKILLS_REPO 到当前工程 agent/.android-skills-fetch.$$。
+# - 拉取或读取本地来源后必须先整目录重建当前工程 agent/skills,再复制到 .agents/skills 和 .claude/skills。
+# - 当前工程根目录必须从脚本所在位置解析,不要依赖执行命令时的 PWD。
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ANDROID_SKILLS_REPO="${ANDROID_SKILLS_REPO:-https://github.com/NBXXF/android-skills.git}"
+ANDROID_SKILLS_REF="${ANDROID_SKILLS_REF:-}"
 
 resolve_project_root() {
     local dir="$SCRIPT_DIR"
@@ -47,10 +61,48 @@ resolve_project_root() {
 
 PROJECT_ROOT="$(resolve_project_root)"
 cd "$PROJECT_ROOT"
+PROJECT_AGENT_DIR="$PROJECT_ROOT/agent"
+STAGED_SKILLS_DIR="$PROJECT_AGENT_DIR/skills"
 
 is_skills_root() {
     local dir="$1"
     [[ -f "$dir/aaaaa-xxf-delivery-loop/SKILL.md" ]]
+}
+
+fetch_remote_skills_src_dir() {
+    local fetch_work_dir
+
+    command -v git >/dev/null 2>&1 || {
+        echo "error: git is required to fetch android-skills for this forced refresh." >&2
+        exit 1
+    }
+
+    # 铁律:远端拉取也只能在当前目标工程 agent/ 内完成。
+    # 不要改成 mktemp、/tmp、$TMPDIR、Documents、Downloads 或任何个人固定路径。
+    # 这个目录只是一次性工作区,refresh_project_skills_cache 会在写入 agent/skills 后删除它。
+    mkdir -p "$PROJECT_AGENT_DIR"
+    fetch_work_dir="$PROJECT_AGENT_DIR/.android-skills-fetch.$$"
+    rm -rf "$fetch_work_dir"
+    echo "-> 拉取 android-skills: $ANDROID_SKILLS_REPO" >&2
+
+    if [[ -n "$ANDROID_SKILLS_REF" ]]; then
+        if ! git clone --depth 1 --branch "$ANDROID_SKILLS_REF" "$ANDROID_SKILLS_REPO" "$fetch_work_dir" >&2; then
+            echo "error: failed to fetch android-skills from $ANDROID_SKILLS_REPO ref $ANDROID_SKILLS_REF" >&2
+            exit 1
+        fi
+    else
+        if ! git clone --depth 1 "$ANDROID_SKILLS_REPO" "$fetch_work_dir" >&2; then
+            echo "error: failed to fetch android-skills from $ANDROID_SKILLS_REPO" >&2
+            exit 1
+        fi
+    fi
+
+    if ! is_skills_root "$fetch_work_dir/skills"; then
+        echo "error: fetched repository does not contain expected skills: $ANDROID_SKILLS_REPO" >&2
+        exit 1
+    fi
+
+    printf '%s\n' "$fetch_work_dir/skills"
 }
 
 resolve_skills_src_dir() {
@@ -77,25 +129,10 @@ resolve_skills_src_dir() {
         return
     fi
 
-    echo "error: missing android skills source." >&2
-    echo "Put copied skills in this project cache first:" >&2
-    echo "  mkdir -p agent" >&2
-    echo "  cp -R /path/to/android-skills/skills agent/skills" >&2
-    echo "or pass a local checkout explicitly:" >&2
-    echo "  ANDROID_SKILLS_DIR=/path/to/android-skills ./setup-ai-skills.sh" >&2
-    exit 1
+    fetch_remote_skills_src_dir
 }
 
-STAGED_SKILLS_DIR="$PROJECT_ROOT/agent/skills"
-SKILLS_SRC=""
-
-mkdir -p "$STAGED_SKILLS_DIR"
-
-if [[ -d "$STAGED_SKILLS_DIR" ]] && is_skills_root "$STAGED_SKILLS_DIR"; then
-    SKILLS_SRC="$STAGED_SKILLS_DIR"
-else
-    SKILLS_SRC="$(resolve_skills_src_dir)"
-fi
+SKILLS_SRC="$(resolve_skills_src_dir)"
 
 [[ -d "$SKILLS_SRC" ]] || {
     echo "error: skills source not found: $SKILLS_SRC" >&2
@@ -151,11 +188,19 @@ sync_skill_dirs() {
     local target_dir="$2"
     local label="$3"
     local count=0
+    local old_skill_dir
 
     [[ -d "$source_dir" ]] || return 0
 
-    echo "-> 同步项目 ${source_dir} 到 ${label}"
+    echo "-> 强制同步项目 ${source_dir} 到 ${label}"
     mkdir -p "$target_dir"
+
+    # 铁律:目标目录里的共享 android-skills 每次都要重建。
+    # 只删除 aaaaa-xxf-* 以避免误伤目标工程自己的非共享 skill。
+    for old_skill_dir in "$target_dir"/aaaaa-xxf-*; do
+        [[ -e "$old_skill_dir" ]] || continue
+        rm -rf "$old_skill_dir"
+    done
 
     for skill_dir in "$source_dir"/*; do
         [[ -d "$skill_dir" ]] || continue
@@ -171,14 +216,44 @@ sync_skill_dirs() {
 
 refresh_project_skills_cache() {
     local source_dir="$1"
+    local fetch_work_dir
+    local parent_dir
+    local tmp_dir
+    local count=0
 
     if [[ "$source_dir" == "$STAGED_SKILLS_DIR" ]]; then
-        return 0
+        echo "error: agent/skills is a generated cache and cannot be used as the refresh source." >&2
+        exit 1
     fi
 
-    echo "-> 刷新当前项目 skills 缓存: agent/skills"
-    sync_skill_dirs "$source_dir" "$STAGED_SKILLS_DIR" "agent/skills"
+    echo "-> 强制重建当前项目 skills 缓存: agent/skills"
+    parent_dir="$(dirname "$STAGED_SKILLS_DIR")"
+    tmp_dir="${STAGED_SKILLS_DIR}.tmp.$$"
+    mkdir -p "$parent_dir"
+    rm -rf "$tmp_dir"
+    mkdir -p "$tmp_dir"
+
+    # 铁律:agent/skills 每次整目录重建,不能增量覆盖,否则被删除的旧 skill 会残留。
+    for skill_dir in "$source_dir"/*; do
+        [[ -d "$skill_dir" ]] || continue
+        [[ -f "$skill_dir/SKILL.md" ]] || continue
+        local name
+        name="$(basename "$skill_dir")"
+        copy_skill_dir "$skill_dir" "$tmp_dir/$name"
+        count=$((count + 1))
+    done
+
+    rm -rf "$STAGED_SKILLS_DIR"
+    mv "$tmp_dir" "$STAGED_SKILLS_DIR"
     SKILLS_SRC="$STAGED_SKILLS_DIR"
+    echo "   -> 重建了 $count 个 skill 到 ${STAGED_SKILLS_DIR}"
+
+    # 铁律:远端 clone 目录只允许短暂存在于当前工程 agent/ 下。
+    # agent/skills 才是唯一持久缓存,不要保留 .android-skills-fetch.*。
+    if [[ "$source_dir" == "$PROJECT_AGENT_DIR/.android-skills-fetch."*/skills ]]; then
+        fetch_work_dir="${source_dir%/skills}"
+        rm -rf "$fetch_work_dir"
+    fi
 }
 
 write_agents_md_block() {

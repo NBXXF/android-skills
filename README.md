@@ -55,17 +55,14 @@ Install targets:
 
 Use this as the project bootstrap entrypoint. It installs both Claude Code and Codex project skills, then checks that the key `aaaaa-xxf-delivery-loop` skill exists.
 
-Team projects should keep a project-local cache in `agent/skills`. The setup script creates `agent/skills` when it is missing, refreshes it from a supplied checkout when needed, then copies from `agent/skills` into `.agents/skills` and `.claude/skills`.
+Team projects can copy `setup-ai-skills.sh` into any project and run it. Every run force-refreshes the project-local cache in `agent/skills`, then copies from `agent/skills` into `.agents/skills` and `.claude/skills`. Existing `agent/skills` is never trusted as the source. When no local checkout is supplied, it fetches `https://github.com/NBXXF/android-skills.git` with `git`; it does not require npx, npm, or Node.js.
 
 ```bash
 cd /path/to/target-android-project
-rm -rf agent/skills
-mkdir -p agent
-cp -R /path/to/android-skills/skills agent/skills
 ./setup-ai-skills.sh
 ```
 
-When maintaining the cache from a local checkout, pass the checkout path explicitly:
+To use a local checkout instead of fetching from GitHub, pass the checkout path explicitly:
 
 ```bash
 cd /path/to/target-android-project
@@ -74,7 +71,7 @@ ANDROID_SKILLS_DIR=/path/to/android-skills ./setup-ai-skills.sh
 
 The script may also live below the target project root. It resolves the project root from the script location with Git first, then searches upward for `.git` up to three parent levels. If no `.git` is found, it falls back to the script directory. It does not use machine-specific default paths.
 
-This script is intentionally a no-Node.js replacement for `npx skills add`. Do not change internal `setup-ai-skills.sh` implementations to call `npx`, `npm`, or Node.js.
+This script is intentionally a no-Node.js replacement for `npx skills add`. Do not change internal `setup-ai-skills.sh` implementations to call `npx`, `npm`, or Node.js. Override `ANDROID_SKILLS_REPO` or `ANDROID_SKILLS_REF` only when testing a fork or branch.
 
 ### 3. Optional `npx skills`
 
