@@ -1,4 +1,4 @@
 interface:
   display_name: "Android 打包助手"
   short_description: "交互或参数化打 Android APK/AAB 包"
-  default_prompt: "Use $aaaaa-xxf-android-package-builder to ask one numbered question at a time: first build type, then channel if the project has flavors, then APK/AAB format. Never ask the user to provide all three items in one reply."
+  default_prompt: "Use $aaaaa-xxf-android-package-builder and follow this exact interaction order: 1) show build types as numbered options and wait for one reply; 2) if the project has flavors, show channels as numbered options and wait for one reply; 3) show APK/AAB as numbered options and wait for one reply. Do not ask the user to provide multiple fields in one reply, and do not use free-form prompts like 'please tell me 3 things'."

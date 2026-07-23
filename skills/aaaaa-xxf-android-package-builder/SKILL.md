@@ -53,6 +53,20 @@ python3 ./scripts/android_pack.py --build-type debug --artifact apk --dry-run
 8. 脚本最终执行对应 Gradle task，例如 `:app:assembleDemoChannelRelease` 或 `:app:bundleDemoChannelRelease`。
 9. 打包完成后，把脚本输出的 task、产物路径和失败原因转述给用户。
 
+## 交互模板
+
+必须按下面的结构逐步问，不要合并成一段自由文本：
+
+1. `请选择打包类型,请回复数字`
+   `1. debug`
+   `2. release`
+2. `请选择打包渠道,请回复数字`
+   `1. xxx`
+   `2. xxx`
+3. `请选择打包格式,请回复数字`
+   `1. apk`
+   `2. aab`
+
 ## 参数规则
 
 - `--build-type`：选择 `debug`、`release` 或项目自定义 build type；大小写不敏感。
