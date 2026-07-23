@@ -3,6 +3,8 @@ name: aaaaa-xxf-android-package-builder
 description: Android 工程打包助手。用于用户说“打包”“打渠道包”“打 apk”“打 aab”“打 release 包”“打 debug 包”“构建安装包”“生成 AAB”“assemble/bundle 某个渠道”等请求；在 Android 项目里自动识别 Gradle buildType、渠道 flavor/variant 和 apk/aab 产物类型，通过交互编号选择或命令行参数执行打包。若项目存在渠道包，必须先列出渠道并让用户显式选择，不能把裸 `release` / `debug` 当成默认渠道包执行。
 ---
 
+> 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
+
 # Android 打包助手
 
 ## 目的
