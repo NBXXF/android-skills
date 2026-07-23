@@ -1,4 +1,0 @@
-interface:
-  display_name: "Acknowledge Before Work"
-  short_description: "Acknowledge first with current time"
-  default_prompt: "Use $aaaaa-xxf-acknowledge-before-work to acknowledge with the custom message and current time first, then continue the user's task."
