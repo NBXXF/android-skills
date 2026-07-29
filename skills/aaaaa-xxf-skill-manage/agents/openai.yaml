@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill 双镜像管理"
+  short_description: "以 skills/ 为源，维护 .agents 和 .claude 的本地 skill 镜像"
+  default_prompt: "使用 $aaaaa-xxf-skill-manage 处理本仓库本地 skill 的新增、修改、删除、重命名和镜像同步。以 `skills/` 为源目录，`.agents/skills` 和 `.claude/skills` 为双镜像，先判定是否为真实本地目录或软链接，再做一致性更新。"
