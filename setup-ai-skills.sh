@@ -310,6 +310,50 @@ PY
     mv "$agents_md.new" "$agents_md"
 }
 
+write_gitignore_block() {
+    local gitignore=".gitignore"
+    local block_lines=(
+        "# Generated shared AI skills"
+        "**/android-skills-fetch*/"
+        ".agents/skills/aaaaa-xxf-*/"
+        ".claude/skills/aaaaa-xxf-*/"
+        ".codex/skills/aaaaa-xxf-*/"
+        "agent/skills/aaaaa-xxf-*/"
+    )
+
+    python3 - "$gitignore" "${block_lines[@]}" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+block = sys.argv[2:]
+
+if path.exists():
+    lines = path.read_text().splitlines()
+else:
+    lines = []
+
+new_lines = []
+i = 0
+while i < len(lines):
+    if lines[i:i + len(block)] == block:
+        i += len(block)
+        while i < len(lines) and lines[i] == "":
+            i += 1
+        continue
+    new_lines.append(lines[i])
+    i += 1
+
+while new_lines and new_lines[-1] == "":
+    new_lines.pop()
+
+if new_lines:
+    new_lines.append("")
+new_lines.extend(block)
+path.write_text("\n".join(new_lines) + "\n")
+PY
+}
+
 install_codex_project_skills() {
     local codex_skills_dir="$1"
 
@@ -322,6 +366,7 @@ refresh_project_skills_cache "$SKILLS_SRC"
 
 echo "-> 安装 android-skills AI skills(Codex CLI -> ${CODEX_SKILLS_DIR} · project scope · copy mode)"
 install_codex_project_skills "$CODEX_SKILLS_DIR"
+write_gitignore_block
 
 echo ""
 echo "-> 安装 android-skills AI skills(Claude Code -> .claude/skills · project scope · copy mode)"
