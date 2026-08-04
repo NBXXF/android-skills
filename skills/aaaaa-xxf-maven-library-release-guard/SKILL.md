@@ -1,6 +1,7 @@
 ---
+disable-model-invocation: true
 name: aaaaa-xxf-maven-library-release-guard
-description: Android Maven 发布库的构建变体与运行时配置门禁。新增、维护、重构或发布 Android Library/AAR，修改 buildFeatures、BuildConfig、maven-publish、singleVariant、发布脚本、调试开关、环境开关或宿主初始化参数时必须使用；防止 release AAR 将库内 BuildConfig.DEBUG 常量折叠为 no-op、GONE 或错误分支。
+description: Android Maven 发布库的构建变体、运行时配置与混淆门禁。新增、维护、重构或发布 Android Library/AAR，修改 buildFeatures、BuildConfig、maven-publish、singleVariant、发布脚本、调试开关、环境开关、混淆注解或 proguard/consumer 规则时必须使用；防止 release AAR 将库内 BuildConfig.DEBUG 常量折叠为 no-op、GONE、错误分支，或把混淆规则误当成自动保留方案。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -9,7 +10,7 @@ description: Android Maven 发布库的构建变体与运行时配置门禁。�
 
 ## 目标
 
-保证 Maven AAR 的行为由宿主运行时配置决定，不被 Library 自身的 release 构建类型错误固化。
+保证 Maven AAR 的行为由宿主运行时配置决定，不被 Library 自身的 release 构建类型或混淆配置错误固化。
 
 ## 先判断模块性质
 
@@ -37,34 +38,22 @@ description: Android Maven 发布库的构建变体与运行时配置门禁。�
 
 只有为了保持已经发布的公共 ABI，且有明确调用方证据时，才能临时保留 BuildConfig 生成；即使保留，也禁止业务代码读取它，并记录迁移计划。
 
+### 涉及混淆时
+
+- 如果是 Android Library/AAR 且代码会被 R8/ProGuard 处理，优先按 [references/obfuscation.md](references/obfuscation.md) 执行。
+- `@Keep` 只能作为源代码级标记，不替代 `proguard-rules.pro` 或 `consumer-rules.pro`。
+- 既有 `proguard-rules.pro`、`consumer-rules.pro`、发布脚本里的 `-keep` 规则必须继续维护，不能因为补了注解就删除。
+- 对外发布的库，新增注解时同时检查是否需要补 consumer 规则，保证下游接入后仍能稳定解析、反射或序列化。
+
 ### 使用宿主运行时事实
 
 按需求选择一种来源：
 
-1. 优先使用宿主显式注入的配置，默认值必须安全关闭：
+1. 优先使用宿主显式注入的配置，默认值必须安全关闭。
+2. 只需要判断宿主 APK 是否 debuggable 时，读取宿主 `ApplicationInfo`，而不是 Library `BuildConfig`。
+3. 需要动态切换、测试环境或远程开关时，使用显式参数、配置接口或 provider lambda。
 
-```kotlin
-data class DebugConfig(val enabled: Boolean = false)
-
-fun init(application: Application, config: DebugConfig) {
-    debugEnabled = config.enabled
-}
-```
-
-宿主调用：
-
-```kotlin
-library.init(application, DebugConfig(enabled = BuildConfig.DEBUG))
-```
-
-2. 只需要判断宿主 APK 是否 debuggable 时，读取宿主 ApplicationInfo，而不是 Library BuildConfig：
-
-```kotlin
-val Context.isAppDebug: Boolean
-    get() = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
-```
-
-3. 需要动态切换、测试环境或远程开关时，使用显式参数、配置接口或 provider lambda。不要把“宿主可调试”“测试环境”“日志开关”“业务 debug mode”混成同一个布尔值。
+不要把“宿主可调试”“测试环境”“日志开关”“业务 debug mode”混成同一个布尔值。
 
 ## 排查流程
 
@@ -72,13 +61,14 @@ val Context.isAppDebug: Boolean
 2. 扫描目标模块：
 
 ```bash
-rg -n "BuildConfig|buildConfigField|buildConfig\s*=\s*true|singleVariant|MavenPublication|maven-publish" MODULE
+rg -n "BuildConfig|buildConfigField|buildConfig\\s*=\\s*true|singleVariant|MavenPublication|maven-publish|@Keep|consumer-rules|proguard-rules" MODULE
 ```
 
-3. 沿调用链检查宿主是否显式传值，以及 Library 是否真正保存并读取该值。
-4. 检查默认值：未初始化、旧调用方或 release 宿主必须默认关闭调试能力。
-5. 检查持久化状态是否会覆盖宿主本次初始化值；初始化参数应是当前进程的权威来源。
-6. 检查 debug/no-op/release 分支是否因常量折叠变成空方法或固定 UI 状态。
+3. 如果命中混淆注解或规则，继续读 [references/obfuscation.md](references/obfuscation.md)，确认是“源码注解 + 规则”并存，而不是二选一。
+4. 沿调用链检查宿主是否显式传值，以及 Library 是否真正保存并读取该值。
+5. 检查默认值：未初始化、旧调用方或 release 宿主必须默认关闭调试能力。
+6. 检查持久化状态是否会覆盖宿主本次初始化值；初始化参数应是当前进程的权威来源。
+7. 检查 debug/no-op/release 分支是否因常量折叠变成空方法或固定 UI 状态。
 
 ## 修复要求
 
@@ -86,6 +76,7 @@ rg -n "BuildConfig|buildConfigField|buildConfig\s*=\s*true|singleVariant|MavenPu
 - 公共 API 尽量保持二进制兼容；新增配置字段时提供安全默认值，但宿主接入必须显式赋值。
 - 对已无调用的公共类先全仓搜索；删除已发布符号前说明二进制兼容风险并获得用户决定。
 - 不用宿主包名反射宿主 `BuildConfig`；优先参数注入或 `ApplicationInfo.FLAG_DEBUGGABLE`。
+- 如果目标是 Android lib，补混淆注解时同步维护已有 pro 规则，不得把原来的 `proguard-rules.pro` / `consumer-rules.pro` 当成过时文件删除。
 
 ## 最小验证
 
@@ -110,7 +101,7 @@ javap -classpath /tmp/library-release.jar -c -p fully.qualified.EntryClass
 
 确认关键方法仍读取运行时字段/参数，`true` 分支没有被裁成空方法、固定 `GONE` 或直接 `return`。同时确认目标模块产物不再包含对自身 `BuildConfig.DEBUG` 的业务引用。
 
-若有宿主工程，至少编译一个实际消费该 Maven 坐标的 debug variant；发布前按发布流程检查 POM、坐标和 release AAR。
+若有宿主工程，至少编译一个实际消费该 Maven 坐标的 debug variant；发布前按发布流程检查 POM、坐标、release AAR，以及混淆注解和 pro 规则是否同时生效。
 
 ## 交付结论
 
@@ -118,6 +109,7 @@ javap -classpath /tmp/library-release.jar -c -p fully.qualified.EntryClass
 
 - 发布 variant 和问题是否由 Library BuildConfig 引起。
 - 删除了哪些 BuildConfig 依赖，宿主运行时配置从哪里注入。
+- 如果涉及混淆，补了哪些注解，保留了哪些 `proguard-rules.pro` / `consumer-rules.pro` 规则。
 - release 单测、release AAR 和宿主集成分别验证了什么。
 - 是否删除公共符号，以及对应兼容风险。
-- 风险结论：存在 Library 自身 BuildConfig 业务依赖或未验证 release 产物时为 `Block`；全部通过后为 `Pass`。
+- 风险结论：存在 Library 自身 BuildConfig 业务依赖、混淆注解/规则不同步，或未验证 release 产物时为 `Block`；全部通过后为 `Pass`。

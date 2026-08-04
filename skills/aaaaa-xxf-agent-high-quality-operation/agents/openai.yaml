@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent 高质量操作"
+  short_description: "强调澄清、证据、进度可见和结论清晰"
+  default_prompt: "使用 $aaaaa-xxf-agent-high-quality-operation 约束高不确定性、低模型稳定性和长时任务中的澄清、方案选择、证据判断、进度汇报和输出结构。"
