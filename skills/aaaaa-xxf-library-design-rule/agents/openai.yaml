@@ -1,0 +1,5 @@
+interface:
+  display_name: "Library 设计规则"
+  short_description: "约束 library 库的 api/core/runtime 等分层职责与发布边界"
+  default_prompt: "使用 $aaaaa-xxf-library-design-rule 规划或审查 Android/JVM library 的 api、core、runtime、common、base、ktx、ui、foundation、material、compiler/processor 分层与依赖方向。"
+
