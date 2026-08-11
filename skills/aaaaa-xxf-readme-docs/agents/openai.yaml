@@ -1,0 +1,4 @@
+interface:
+  display_name: "README 文档规范"
+  short_description: "规范 Android SDK 和 Library 文档结构"
+  default_prompt: "使用 $aaaaa-xxf-readme-docs 为 Android、KMP、SDK 或 Library 编写格式友好的 README、指南、API 参考、最佳实践、故障排查、迁移和版本记录文档，优先使用表格、树状结构、流程图和 Demo。"
