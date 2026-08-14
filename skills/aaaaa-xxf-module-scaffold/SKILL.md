@@ -51,6 +51,8 @@ description: 为 Android 项目新增或拆分 Android library/app/demo 模块�
 - 模块 A 对外提供服务时，A 自己提供 `AProvider : ServiceProvider` 或 `AServiceProvider`。
 - 其他模块只依赖 `a-provider`，通过 `ServiceProvider` 接口读取能力。
 - 宿主只负责在 root 入口里统一注册 `Initialization`、安装各模块导出的 Koin module，并收集 `ServiceProvider`，不直接耦合模块实现。
+- KPower DI 的 `register<T>`、`registerIfAbsent<T>`、`getOrPut<T>`、`registerInitialization { register<T> { ... } }`、`registerServiceProvider { register<T> { ... } }` 必须显式写泛型类型；脚手架和示例禁止生成 `register { Impl() }`、`getOrPut { Impl() }` 这类依赖返回值推断的写法。
+- 暴露接口或抽象契约时，泛型必须写契约类型，例如 `register<SharedPreferencesFactory> { DefaultSharedPreferencesFactory() }`，不能写成实现类或省略泛型。
 
 ### 5. 推荐模块模板
 
