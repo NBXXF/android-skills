@@ -23,6 +23,13 @@
 - 运行时解密资源
 - 白名单加密 assets/raw
 - 资源加密排错
+- input output verify
+- input.key.keySupplier
+- output.sourceConfig.className
+- pathMappingExtensions
+- uniqueKey
+- randomKey
+- failOnCollision
 
 ## 典型询问方式
 
@@ -33,6 +40,10 @@
 - “raw 文件怎么加密？”
 - “给我一份 resource-encrypt 的接入教程”
 - “帮我讲一下资源文件加密的步骤”
+- “input 该怎么写”
+- “output.sourceConfig.className 要怎么配”
+- “pathMappingExtensions 是什么”
+- “failOnCollision 应该放哪”
 
 ## 回复风格
 

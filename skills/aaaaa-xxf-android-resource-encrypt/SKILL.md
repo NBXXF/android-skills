@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-android-resource-encrypt
-description: Android 资源文件加密助手。用于用户询问“怎么使用资源文件加密”“怎么做资源文件加密”“广告配置加密”“assets 文件加密”“raw 文件加密”“resource-encrypt 接入/教程”等场景；引导读取 `references/resource-encrypt.md` 和 `trigger.md`，并按需要回答接入、配置、白名单、运行时解密和排错教程。
+description: Android 资源文件加密助手。用于用户询问“怎么使用资源文件加密”“怎么做资源文件加密”“广告配置加密”“assets 文件加密”“raw 文件加密”“resource-encrypt 接入/教程”等场景；引导读取 `references/resource-encrypt.md` 和 `trigger.md`，并按需要回答新 DSL 的 `input/output/verify`、路径映射、运行时解密和排错教程。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -15,6 +15,9 @@ description: Android 资源文件加密助手。用于用户询问“怎么使�
 - `res/raw/` 文件加密
 - 广告配置、埋点配置、开关配置等资源文件加密
 - 构建期加密白名单配置
+- `input { ... }` / `output { ... }` / `verify { ... }` 新 DSL
+- `sourceConfig.className(...)` 生成源码配置
+- `pathMappingExtensions` 路径映射候选
 - 运行时解密读取
 - 接入教程和排错说明
 
@@ -26,7 +29,9 @@ description: Android 资源文件加密助手。用于用户询问“怎么使�
 4. 如果用户明确要“教程”“步骤”“接入示例”，按教程式回答，优先给出：
    - 适用场景
    - 构建期配置
-   - `assets` / `raw` 白名单
+   - `input.assets` / `input.raw` 白名单
+   - `input.key.keySupplier` 及 `uniqueKey()` / `randomKey()`
+   - `output.sourceConfig.className(...)`
    - 运行时读取方式
    - 常见错误和排查
 
