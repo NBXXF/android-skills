@@ -27,7 +27,9 @@ description: 为 Android 项目新增或拆分 Android library/app/demo 模块�
 - 如果模块 A 需要对外暴露能力，模块 A 必须提供一个独立的 `a-provider` 契约层。
 - `ServiceProvider` 接口、SPI 入口、对外服务协议必须放在 `a-provider` 或等价的契约模块里。
 - 其他模块只能依赖 `a-provider`，通过接口协作，不能反向引用模块 A 的实现包。
-- 模块 A 的实现模块只负责提供 `ServiceProvider` 的实现，宿主或聚合模块负责注册和收集。
+- 模块 A 的实现模块只负责提供 `ServiceProvider` 的实现，并通过 `registerServiceProvider { register<接口类型> { 实现() } }` 导出 Koin module；宿主或聚合模块只负责安装 module 和收集。
+- `registerServiceProvider` 内部 register 必须显式写服务接口类型，例如 `register<AServiceProvider> { AServiceProviderImpl(get()) }`，不能省略成实现类推断，否则 `get<AServiceProvider>()` 无法按接口获取。
+- 跨模块服务默认使用稳定单例生命周期，不通过 `Cache.None` / `Cache.EagerSingleton` 改服务生命周期；需要预热时放入 `Initialization` 编排。
 - 如果一个功能需要被多个模块消费，优先拆成：
   - `xxx-provider`：契约、接口、模型、ServiceProvider 定义
   - `xxx-impl`：实现
@@ -48,7 +50,7 @@ description: 为 Android 项目新增或拆分 Android library/app/demo 模块�
 - 模块 A 需要初始化时，A 自己提供 `AInitialization : Initialization<Unit>`。
 - 模块 A 对外提供服务时，A 自己提供 `AProvider : ServiceProvider` 或 `AServiceProvider`。
 - 其他模块只依赖 `a-provider`，通过 `ServiceProvider` 接口读取能力。
-- 宿主只负责在 root 入口里统一注册 `Initialization` 和收集 `ServiceProvider`，不直接耦合模块实现。
+- 宿主只负责在 root 入口里统一注册 `Initialization`、安装各模块导出的 Koin module，并收集 `ServiceProvider`，不直接耦合模块实现。
 
 ### 5. 推荐模块模板
 
@@ -72,13 +74,19 @@ interface AServiceProvider : ServiceProvider {
 class AInitialization(
     private val context: Context,
 ) : Initialization<Unit> {
-    override suspend fun initialize() {
-        // 声明容器对象，注册服务实现，完成 SDK 或模块初始化。
+    override fun initialize() {
+        // 完成 SDK 或模块启动期初始化。
     }
 }
 
-class AProviderImpl : AServiceProvider {
+class AServiceProviderImpl : AServiceProvider {
     override fun provideFoo(): Foo = Foo()
+}
+
+val moduleA = module {
+    registerServiceProvider {
+        register<AServiceProvider> { AServiceProviderImpl() }
+    }
 }
 ```
 
@@ -92,18 +100,22 @@ class AProviderImpl : AServiceProvider {
 // moduleA 由 a-impl 或 a-provider 模块对外导出，宿主只负责聚合。
 val moduleA = module {
     single<Context> { applicationContext }
-    single<AServiceProvider> { AProviderImpl() }
+    registerServiceProvider {
+        register<AServiceProvider> { AServiceProviderImpl() }
+    }
 }
 
 // moduleB 同理，由各自模块导出。
 val moduleB = module {
-    single<BServiceProvider> { BProviderImpl() }
+    registerServiceProvider {
+        register<BServiceProvider> { BServiceProviderImpl() }
+    }
 }
 
 startKoin {
     modules(moduleA, moduleB)
 
-    registerInitialization(scope = initializationScope) {
+    registerInitialization {
         register<AInitialization> { AInitialization(get()) }
     }
 }
