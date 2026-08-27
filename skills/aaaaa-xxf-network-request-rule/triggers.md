@@ -15,6 +15,8 @@
 - 响应式编程
 - 多次发射
 - first cache
+- SSE
+- Server-Sent Events
 - org.json
 - JSON DTO
 - DTO 命名
