@@ -1,0 +1,27 @@
+# 触发词
+
+- Retrofit ApiService
+- 网络请求层
+- RESTful 接口
+- RESTful 资源设计
+- 万能接口
+- 业务 client
+- 网络助手
+- 请求管理器
+- Flow 优先
+- Observable 优先
+- suspend 接口
+- Call 接口
+- 响应式编程
+- 多次发射
+- first cache
+- org.json
+- JSON DTO
+- DTO 命名
+- 请求模型 / 响应模型
+- client 包装
+- JSON 边界
+- interceptor / 拦截器
+- token 刷新
+- 401 处理
+- 重试机制

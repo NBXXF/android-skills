@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 网络请求规范"
+  short_description: "约束 Retrofit 声明式 API、RESTful 设计、响应式返回和 JSON/DTO 边界"
+  default_prompt: "使用 $aaaaa-xxf-network-request-rule 约束 Android 网络请求层的 Retrofit ApiService、RESTful 资源设计、Flow/Observable/suspend/Call 返回优先级、token/401/重试下沉、DTO 命名和 JSON 边界。"
