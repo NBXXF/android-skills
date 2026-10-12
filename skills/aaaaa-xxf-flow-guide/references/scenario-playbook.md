@@ -148,7 +148,21 @@ viewEvents
 
 ## 8. ViewModel、Service 或 SDK Scope
 
-核心层可以用带 Job 的 `CoroutineScope` 作为结束信号：
+核心层可以用带 Job 的 `CoroutineScope` 作为结束信号。Android ViewModel 可以直接绑定 ViewModel，也可以将 `viewModelScope` 交给静态 facade：
+
+```kotlin
+// RxStyle Flow 扩展：ViewModel.onCleared 后自动取消本次订阅
+source
+    .subscribeOn(Schedulers.io())
+    .bindLifecycle(this)
+    .subscribe(::updateState, ::reportFailure)
+
+// Java/静态调用风格，适合手动组装 converter
+source.to(FlowLifecycle.bindLifecycle(viewModelScope))
+    .subscribe(::updateState, ::reportFailure)
+```
+
+也可以直接使用核心 AutoDispose converter：
 
 ```kotlin
 source

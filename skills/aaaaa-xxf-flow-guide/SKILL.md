@@ -37,6 +37,7 @@ description: 面向 KPower RxStyle Flow 与 reactive-coroutines-android 的订�
 - `subscribeOn` 管上游订阅，`observeOn` 管其后 Observer 信号，`unsubscribeOn` 管上游释放。Android UI 更新必须显式切 Main；Lifecycle 绑定不会替代 `observeOn`。
 - 有限任务可自然终止；需要提前停止的订阅必须保存 `FlowDisposable` 或用适当的容器管理。`dispose()` 只取消，不发送 `onComplete`。
 - `to(autoDisposable(...))` 放在 operator 链末端；它按每次订阅绑定 scope，正常 scope 结束只取消该订阅。返回 proxy 只能调用 terminal API。
+- Android ViewModel 可用 `Flow<T>.bindLifecycle(viewModel)` / `RxFlow<T>.bindLifecycle(viewModel)`，也可用 `FlowLifecycle.bindLifecycle(viewModel.viewModelScope)` 创建 converter；ViewModel 清除时取消订阅。`CoroutineScope` 只提供取消边界，不负责切换数据链 dispatcher。
 - 显式提供 `onError`。省略错误回调的订阅会交给 `FlowPlugins`；不能静默吞错。
 - RxStyle `T` 要求非空。nullable 数据先在原生 Flow 阶段处理。操作符回调是否支持 suspend 必须看签名。
 - `RxFlow` 同时实现 `Flow`。静态类型被收窄成 `Flow<T>` 后，同名扩展可能解析到 kotlinx Flow operator；检查 receiver、import 和推断类型。

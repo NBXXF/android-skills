@@ -156,8 +156,10 @@ Android 子包 `com.xxf.coroutines.android.disposables` 增加 `FlowDisposable.c
 Android 包 `com.xxf.coroutines.android.autodispose`：
 
 - `autoDisposable(LifecycleOwner[, untilEvent])`、`autoDisposable(Lifecycle[, untilEvent])`，默认 `ON_DESTROY`，`ON_ANY` 不合法。
+- `autoDisposable(ViewModel)` 使用 `viewModel.viewModelScope` 作为取消边界；也可以直接使用核心层 `autoDisposable(CoroutineScope)`。
 - `autoDisposable(View[, checkAttached = true])`，在 View detach 结束；`checkAttached` 控制订阅时未 attach 的 outside-scope 策略。
-- `Flow<T>.bindLifecycle(owner/lifecycle/view)` 与 `RxFlow<T>.bindLifecycle(...)` 返回 proxy；生命周期结束仅取消本次订阅。
+- `Flow<T>.bindLifecycle(owner/lifecycle/view/viewModel)` 与 `RxFlow<T>.bindLifecycle(...)` 返回 proxy；生命周期或 scope 结束仅取消本次订阅。
+- `FlowLifecycle.bindLifecycle(...)` 为 Java/静态调用场景提供 converter facade，支持 `LifecycleOwner`、`Lifecycle`、`View`、`ViewModel` 和 `CoroutineScope`。
 - `FlowDisposable.bindLifecycle(...)` 是订阅后包装方式；新链路优先在 subscribe 前用 converter，以得到 listener-ready 握手。
 - `LifecycleOwner.asFlowScopeProvider(...)`、`Lifecycle.asFlowScopeProvider(...)` 可把 Android 生命周期接入核心转换器。
 
