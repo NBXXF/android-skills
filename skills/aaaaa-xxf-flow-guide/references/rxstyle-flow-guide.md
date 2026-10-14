@@ -1,6 +1,6 @@
 # RxStyle Flow 核心概念与使用指南
 
-本文整理核心订阅模型、线程/错误语义和 RxJava 迁移边界。业务场景示例在 [场景手册](scenario-playbook.md)，完整扩展名与签名目录在 [API 目录](api-catalog.md)。
+本文整理核心订阅模型、线程/错误语义和 RxJava 迁移边界。业务场景示例在 [场景手册](scenario-playbook.md)，完整扩展名在 [API 导航](api-catalog.md)，全部显式重载在 [签名快照](api-signatures.md)；操作符逐类行为查 [语义参考](operator-reference.md)，链路推导查 [响应式设计](reactive-design.md)。
 
 ## 目录
 
@@ -40,7 +40,7 @@ onSubscribe -> onNext* -> onError/onComplete         |
 
 | 概念 | 本库含义 | 易混点 |
 |---|---|---|
-| `Flow<T>` | Kotlin 原生冷数据流协议 | 以 suspend `collect` 为终端；operator 可有 suspend 回调。 |
+| `Flow<T>` | Kotlin 数据流协议，既可包装冷源，也可来自热 StateFlow/SharedFlow | 以 suspend `collect` 为终端；operator 可有 suspend 回调。 |
 | `RxFlow<T>` | `AbstractFlow` 子类，同时实现 `Flow` 与 `FlowSubscribeSource`；Rx operator 在内部以 Observer/Disposable 协议组合 | 静态类型为 `RxFlow` 才能优先使用专用 RxFlow overload；赋值到 `Flow` 后扩展解析可能变化。 |
 | assembly | 构建 operator 链 | 通常不启动 source、不收集数据。 |
 | subscription | 每次调用 `subscribe` 建立一份独立订阅 | cold source 每次重新执行；不要把构建链和订阅混为一谈。 |
@@ -95,7 +95,7 @@ AutoDispose 限定的是**一份订阅何时取消**，不会自动在生命周�
 |---|---|---|
 | 无 `subscribeOn` | 同步 source 默认从调用 `subscribe()` 的线程开始 | 不自动选择 IO、Default 或 Main。 |
 | `subscribeOn(scheduler)` | 上游订阅/source 执行位置 | 不保证下游 observer 永远在该线程。 |
-| `observeOn(scheduler)` | 链路该位置之后的信号通知线程 | 不负责启动 source 的线程。 |
+| `observeOn(scheduler)` | 链路该位置之后的 onNext/terminal 通知线程（不含 onSubscribe） | 不负责启动 source 的线程。 |
 | `unsubscribeOn(scheduler)` | 上游 dispose/释放动作的调度 | 不切换 `onNext`、`onError`、`onComplete` 通知线程。 |
 | Android `bindLifecycle` | Lifecycle/View 控制面的注册与结束监听 | 不切换业务数据或 UI callback 线程。 |
 
@@ -151,8 +151,8 @@ Nullable `Flow<T?>` 继续用原生 Flow 的 collect/operators；进入 `subscri
 ## 背压、缓存与重订阅
 
 - 该库目标是 Observable 风格 Observer/Disposable API，不提供 `Flowable.request(n)` 背压协议。
-- `observeOn` 有缓冲队列；缓冲只能吸收有限速度差，不能让无限生产长期安全。
-- `Flows.interval(period)` 的默认 source 使用 computation scheduler；显式 scheduler 重载需进一步检查实现。README 和工厂 KDoc 特别区分普通顺序 Flow 行为与 scheduler 定时 source，不能将两者概括为相同的背压/时钟行为。
+- `observeOn` 使用可增长分段队列，bufferSize 是分段大小而非容量上限；RxFlow.collectSafely 还用 Channel.UNLIMITED 桥接。持续速度差会增长内存，不能靠后置原生 buffer 倒推上游受背压控制。
+- `Flows.interval(period)` 默认委托 computation scheduler 重载，当前实现是 scheduler 驱动的 RxIntervalFlow，tick 独立产生；工厂旧 KDoc 中“普通顺序 Flow 慢消费者拉长间隔”的说明不能覆盖当前实现。以实现及 RxFlowTimeSourceTest 为准，慢消费者需评估积压。
 - `Flows.fromCallback` 借助 `callbackFlow`。参考实现的 `FlowCallback.onNext` 调用 `trySend`，但接口返回 `Unit` 且忽略发送结果；默认 buffer 满时，调用方无法从这个方法获知失败，事件可能被丢弃。注册、取消和 unregister 是资源边界；调用方需要检查 callback API 的事件速率与缓冲策略，并处理注册失败、重复 terminal 和取消后的迟到回调。
 - `retry(times)` 的 `times` 是最多重试次数，因此最大 source 订阅次数是 `times + 1`；`retry()` 是无限重试。网络错误重试应限定次数/错误类型并考虑退避，不要无条件永久重试。
 - `defer`、`fromCallable` 等 cold source 每次订阅会再次执行。多处订阅不会自动共享一次请求结果；需要缓存/共享时使用工程已有的 StateFlow/share/cache 设计并明确失效语义。

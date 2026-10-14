@@ -1,4 +1,4 @@
 interface:
   display_name: "RxStyle Flow 使用指南"
-  short_description: "指导 Flow 的订阅、调度、Disposable 与生命周期 AutoDispose"
-  default_prompt: "使用 $aaaaa-xxf-flow-guide 按 KPower RxStyle Flow 的实际 API 处理业务场景、source/operator 选择、subscribe、Scheduler、FlowDisposable、错误和 Android Lifecycle AutoDispose；核对静态类型与线程边界，并说明 Flow/Rx 语义差异。"
+  short_description: "按完整操作符与源码签名设计 Flow 业务链，处理并发、错误、线程与生命周期"
+  default_prompt: "使用 $aaaaa-xxf-flow-guide 依据两个模块的操作符语义与完整签名，先定义事件/状态、并发与错误范围，再设计可验证的业务链路；核对 receiver、suspend、调度、取消所有者与 Android 生命周期。"

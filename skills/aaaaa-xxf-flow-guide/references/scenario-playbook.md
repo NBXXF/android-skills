@@ -2,6 +2,8 @@
 
 先按业务目标选场景，再组合共同规则。示例 package 来自参考实现；若目标工程版本/import 不同，先查当前源码。除特别说明外，示例都应显式处理 `onError`。
 
+扩展场景：完整 import 的搜索状态链、串行写入、缓存策略、两种轮询时钟和原生 Flow 能力边界见 [响应式设计与组合](reactive-design.md)；逐项函数行为见 [操作符参考](operator-reference.md)。本页未给 import 的片段需按 [API 包索引](api-catalog.md) 导入；repository/render 等为业务占位，不是库 API。
+
 ## 场景索引
 
 | 场景 | 推荐路径 | 取消方式 |
@@ -254,7 +256,7 @@ queryFlow
     .subscribe(::renderResults, ::showError)
 ```
 
-当前实现会在新 outer 值到来时 dispose 上一个 inner。适合搜索输入或选择变化。若每个请求都必须执行且按顺序完整输出，选择 `concatMap`；它逐个订阅 inner，不允许并发交错，outer 值可能排队等待。核对输入速率和队列增长，不要把两者交换。
+当前实现会在新 outer 值到来时 dispose 上一个 inner。concatMap 的 transform 在 outer 到达时同步执行，只把返回的 inner 排队；副作用必须放在惰性 inner 内。适合搜索输入或选择变化。若每个请求都必须执行且按顺序完整输出，选择 `concatMap`；它逐个订阅 inner，不允许并发交错，outer 值可能排队等待。核对输入速率和队列增长，不要把两者交换。
 
 ## 12. 多源组合、先后顺序与 gate
 
@@ -292,6 +294,8 @@ queryChanges
 ```
 
 `timer` 延迟后发出一次 `0L` 并完成；`interval(period)` 第一项在一个 period 后；`interval(initialDelay, period)` 可分别指定首延迟和周期。`throttleFirst` 保留窗口第一个值；`throttleLast` 是周期 sample，参考实现默认不补发窗口末尾遗留项；`throttleWithTimeout` 对应 debounce/timeout 行为。时间 operator 可有 scheduler 重载，生产测试优先使用可控 Scheduler，不靠真实等待。
+
+防抖期间旧请求可能继续返回；该例中的 repository.search 必须是同步返回 Flow 的函数，而非 suspend 返回结果。若要求原始输入一变化就取消旧请求，使用 [搜索状态示例](reactive-design.md#可编译的搜索链路) 的 switchMap + timer 模式。单次失败需在 inner 内恢复，才能继续响应下一次查询。
 
 持续 interval 需要明确释放：保存 `FlowDisposable`、放入 Composite，或绑定到生命周期。不得把 `timer` 与 `interval` 的完成行为混为一谈。
 
@@ -339,7 +343,7 @@ Flows.using(
 
 | RxJava API | 本库方向 | 迁移提醒 |
 |---|---|---|
-| `Observable.just/defer/fromCallable` | `Flows.just/defer/fromCallable` | cold source 每次订阅重新计算；callable 不自动切 IO。 |
+| `Observable.just/defer/fromCallable` | `Flows.just/defer/fromCallable` | defer/callable 每次订阅重新计算；just 的参数在搭链前已求值；callable 不自动切 IO。 |
 | `subscribe` | Flow 扩展 `subscribe` | 非 suspend，返回 disposable；Observer overload 交付取消句柄。 |
 | `Disposable` | `FlowDisposable` | dispose 不发 complete。 |
 | `CompositeDisposable` | `CompositeFlowDisposable` | 区分可重用 `clear` 与永久 `dispose`。 |

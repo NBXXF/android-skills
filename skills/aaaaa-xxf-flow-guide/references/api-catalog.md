@@ -1,190 +1,122 @@
-# RxStyle Flow API 目录
+# RxStyle Flow API 导航与源码覆盖
 
-这是按参考源码整理的导航，不替代当前依赖版本的 API Reference。扩展函数尤其要检查 import 和静态 receiver；函数没有出现在本目录不代表目标版本没有它，函数出现也不保证目标版本签名相同。
+## 如何查询
 
-## 目录
+- 不知道业务该选哪个操作符：读 [响应式设计与组合](reactive-design.md)。
+- 知道函数名，想看作用、错误/完成/取消、线程与例子：读 [操作符参考](operator-reference.md)。
+- 需要**每个显式 overload 的完整签名**：按本页文件名查 [公开函数签名快照](api-signatures.md)，保留 receiver、泛型、参数名、默认值与 suspend。
+- 当前依赖有差异：以当前版本源码/测试为准。快照不是在线最新版，也不是所有 kotlinx Flow / RxJava 操作符目录。
 
-- [Source factories](#source-factories)
-- [订阅与 Observer](#订阅与-observer)
-- [操作符类别](#操作符类别)
-- [调度器](#调度器)
-- [Disposable 家族](#disposable-家族)
-- [AutoDispose 与 Android 扩展](#autodispose-与-android-扩展)
-- [阻塞终端 API](#阻塞终端-api)
-- [快速定位源码](#快速定位源码)
+## 包与类型边界
 
-## Source factories
-
-核心包：`com.nbxxf.kpower.coroutines.rxstyle.flow`。参考 `Flows.kt`；下表只列方法名和实用语义，不展开所有 overload。
-
-| 分类 | API | 语义/提醒 |
+| 导入包 | 能力 | 返回与约束 |
 |---|---|---|
-| 固定 source | `just`、`empty`、`error`、`never` | `never` 仅在取消时结束；`error` 在订阅收集时失败。 |
-| 延迟/计算 | `defer`、`fromCallable`、`fromSupplier`、`fromSuspend` | 每次订阅重新调用 factory；不会因为 callable 而自动切 IO。 |
-| Kotlin 集合 | `fromArray`、`fromIterable`、`fromSequence`、`range`、`rangeLong` | `range(start, count)` 的第二个参数是数量。 |
-| callback/action | `fromCallback`、`create`、`fromAction`、`fromRunnable`、`fromResult` | `create` 是顺序 FlowCollector block；callback 应用 `fromCallback`；action/runnable 不发值。 |
-| 时间 | `timer`、`interval`、`intervalRange` | timer 单次发 `0L` 后结束；interval 无限；intervalRange 有限。 |
-| resource | `using` | 每次收集创建资源，结束/失败/取消后同步 disposer。 |
-| 多 source | `concat`、`merge` | concat 顺序订阅；merge 合流，不能假设固定交错顺序。 |
-| 包装 | `wrap` | 普通 Flow 惰性进入 RxFlow；已有 RxFlow 保持原实例。 |
+| `com.nbxxf.kpower.coroutines.rxstyle.flow` | Flows、RxFlow、Observer、subscribe、核心 operators、FlowPlugins/debug | RxStyle T : Any；map/filter 仅显式 RxFlow 扩展 |
+| 上述包的 `.schedulers` | Scheduler、Schedulers、线程便捷扩展 | 不把 CoroutineDispatcher 直接传给需要 Scheduler 的函数 |
+| `.disposables` | FlowDisposable、CompositeFlowDisposable、SerialFlowDisposable、FlowDisposableContainer | dispose 不发 onComplete |
+| `.observers` | DisposableFlowObserver | 自管理订阅，支持 onStart |
+| `.autodispose` | converter、proxy、scope 协议、核心 autoDisposable/to、ManualFlowScopeProvider、插件 | proxy 仅终端 API |
+| `com.nbxxf.kpower.coroutines.transform.suspend2flow` | suspendAsFlow、suspend 函数引用 asFlow | **原生 Flow**，默认 IO |
+| `com.nbxxf.kpower.coroutines.transform.flow2stateflow` | Flow.asStateFlow | stateIn 包装 |
+| `com.nbxxf.kpower.coroutines.transform.suspend2stateflow` | suspendAsStateFlow | 原生共享状态 |
+| `com.xxf.coroutines.android.autodispose` | Android autoDisposable、bindLifecycle、FlowLifecycle、asFlowScopeProvider | AndroidX / View 生命周期 |
+| `com.xxf.coroutines.android.schedulers` | AndroidSchedulers、Main 便捷扩展、scheduleDirectOnMain | 数据 UI 通知显式切 Main |
+| `com.xxf.coroutines.android.lifecycle` | filterWhen | 每值至少状态 OR 判断；不取消、不重启 |
+| `com.xxf.coroutines.android.disposables` | collectTo、bindDisposableContainer | 返回 Boolean，不是 FlowDisposable |
 
-RxStyle 工厂值类型为 `T : Any`。目标使用 nullable 元素时，先保留 native Flow 或在进入 RxStyle 前转换。
+## 创建源完整名称索引
 
-## 订阅与 Observer
+均在 `Flows.kt`；所有显式重载见签名快照 `Flows.kt` 小节。
 
-`FlowRxInterop.kt` 为普通 `Flow<T>` 提供以下扩展，`RxFlow` 自身也实现 `Flow` 订阅源：
+| 类别 | 函数（重载区别） |
+|---|---|
+| 固定/终态 | just(value / first,second,vararg)、empty、error(Throwable / suspend supplier)、never |
+| 延迟/执行 | create、defer、fromCallable、fromSupplier、fromSuspend、fromAction、fromRunnable、fromResult |
+| 集合/范围 | fromArray、fromIterable、fromSequence、range、rangeLong |
+| callback/资源/包装 | fromCallback(register,unregister)、using(resourceFactory,flowFactory,disposer)、wrap |
+| 时间 | timer(delay[,scheduler])；interval(period[,scheduler] / initialDelay,period[,scheduler])；intervalRange(start,count,initialDelay,period[,scheduler]) |
+| 多源 | concat(vararg / Iterable)、merge(vararg) |
 
-```kotlin
-fun Flow<T>.subscribe(): FlowDisposable
-fun Flow<T>.subscribe(onNext: (T) -> Unit): FlowDisposable
-fun Flow<T>.subscribe(onNext: (T) -> Unit, onError: (Throwable) -> Unit): FlowDisposable
-fun Flow<T>.subscribe(
-    onNext: (T) -> Unit,
-    onError: (Throwable) -> Unit,
-    onComplete: () -> Unit
-): FlowDisposable
-fun Flow<T>.subscribe(observer: FlowObserver<T>)
-fun <E : FlowObserver<T>> Flow<T>.subscribeWith(observer: E): E
+## 操作符完整名称索引
+
+receiver 记法：**双** = Flow/RxFlow 各有显式 overload；**Flow** = Flow 入口，可接收 RxFlow，但内部可能走原生 collect 桥接；**RxFlow** = 只为 RxFlow 声明，普通 Flow 同名函数需看 kotlinx import。
+
+| 源文件 | 函数 / 重载族 | receiver / 详细语义 |
+|---|---|---|
+| `RxFlowOperators.kt` | map、filter | RxFlow；[转换过滤](operator-reference.md#2-转换过滤去重值变成什么) |
+| 同上及 `FlowLifecycleExtensions.kt` | doOnNext、doAfterNext、doOnError、doOnComplete、doOnTerminate、doAfterTerminate、doOnDispose、doOnSubscribe、doFinally、doOnLifecycle、doOnEach | 双；[副作用](operator-reference.md#9-副作用与-finally挂在哪个信号上) |
+| `FlowTransformExtensions.kt` | skip(count)、skipWhile、switchMap、concatMap | 双；[扁平化](operator-reference.md#3-扁平化如何处理由事件触发的异步任务) |
+| 同上 | ofType<R>() | Flow<*> / reified；[过滤](operator-reference.md#2-转换过滤去重值变成什么) |
+| `FlowDistinctExtensions.kt` | distinctUntilChanged() / (keySelector) / (areEqual)；distinctUntilChangedByHash() | distinct 双；ByHash 仅 Flow；[去重](operator-reference.md#2-转换过滤去重值变成什么) |
+| `FlowStartEmptyExtensions.kt` | defaultIfEmpty、switchIfEmpty(Flow / supplier)、startWithItem、startWith、startWithArray、startWithIterable | 双；[空流和前缀](operator-reference.md#4-空流回退与前缀) |
+| `FlowErrorExtensions.kt` | onErrorReturnItem、onErrorReturn、onErrorResumeNext、onErrorComplete(predicate={true}) | 双；[恢复](operator-reference.md#5-错误恢复与重新订阅) |
+| `FlowRetryExtensions.kt` | retry() / (times) / (times,predicate)；retryUntil | 双；同上，predicate 同步 |
+| `FlowRepeatExtensions.kt` | repeat() / (times)；repeatUntil | Flow；同上，repeatUntil 支持 suspend |
+| `FlowCombineExtensions.kt` | combineLatest、withLatestFrom、zipWith、concatWith、mergeWith | Flow；[多源](operator-reference.md#6-多源组合哪个事件驱动输出)；前三个 transform suspend |
+| `FlowGateExtensions.kt` | takeUntil(predicate / other)、skipUntil(other) | Flow；[门控](operator-reference.md#7-门控与截断丢值停源还是延后启动) |
+| `FlowTimeExtensions.kt` | delay(duration[,scheduler])、delaySubscription(duration[,scheduler] / other)、throttleFirst、throttleLast、throttleWithTimeout（各有 scheduler 重载） | Flow；[时间](operator-reference.md#8-时间计时点尾值与通知线程) |
+| `RxFlowScheduling.kt` | subscribeOn、observeOn(scheduler,delayError=false,bufferSize=128)、unsubscribeOn | 双；[调度](operator-reference.md#10-调度函数任务与信号分别在哪执行) |
+| `schedulers/FlowSchedulerExtensions.kt` | subscribeOnComputation/IO/NewThread/Single/Trampoline；observeOnComputation/IO/NewThread/Single/Trampoline(delayError=false) | 双；便捷 observeOn 不暴露 bufferSize |
+| `FlowDebug.kt` | debug(identifier=null,trimOutput=false) | 双；[副作用与诊断](operator-reference.md#9-副作用与-finally挂在哪个信号上) |
+| `autodispose/FlowAutoDispose.kt` | to(converter)、autoDisposable(scopeProvider / CoroutineScope)、CoroutineScope.asFlowScopeProvider | to 双；[生命周期](operator-reference.md#12-android-生命周期过滤与取消) |
+
+## 终端与辅助协议完整索引
+
+| 文件 / 类型 | API | 细节 |
+|---|---|---|
+| `RxFlow.kt` / `FlowRxInterop.kt` | subscribe() / (onNext) / (onNext,onError) / (onNext,onError,onComplete) / (observer)；subscribeWith(observer) | RxFlow 成员 + Flow 扩展；observer overload 为 Unit，其余 lambda 返回 FlowDisposable |
+| `FlowBlockingExtensions.kt` | blockingFirst() / (defaultValue)、blockingLast() / (defaultValue)、blockingForEach(onNext)、blockingSubscribe 0/1/2/3 callback | 无 timeout overload；主线程禁止 |
+| `FlowObserver` / `FlowSubscribeSource` / `FlowCallback` | onSubscribe/onNext/onError/onComplete；subscribe(observer)；callback 三信号 | FlowCallback 没有 onSubscribe |
+| `FlowDisposable` | isDisposed、dispose；companion.disposed/empty/fromAction | 属性未收入函数快照 |
+| `FlowDisposableContainer` / `CompositeFlowDisposable` | add/remove/delete；addAll/size/clear/dispose；Composite 构造器 empty/vararg/Iterable | clear 复用，dispose 关闭 |
+| `SerialFlowDisposable` | get/set/replace/dispose；构造可带 initialDisposable | set 释放旧句柄，replace 不释放 |
+| `DisposableFlowObserver` | onSubscribe/dispose/isDisposed；protected onStart 扩展点 | protected 方法不在公开函数快照 |
+| `Scheduler` / `Worker` | createWorker；scheduleDirect(action[,delay])；schedule(action[,delay])；schedulePeriodically(action,initialDelay,period)；dispose/isDisposed | 延迟 Duration；Worker 串行 |
+| `Schedulers` | computation/io/single/newThread/trampoline/from(CoroutineDispatcher) | [调度语义](operator-reference.md#10-调度函数任务与信号分别在哪执行) |
+| `FlowConverter` / `FlowSubscribeProxy` | apply；subscribe/subscribeWith 终端族 | proxy 继承 subscribe(observer) 协议 |
+| `FlowScopeProvider` / `FlowScopeSource` / `FlowScopeObserver` | requestScope；UNBOUND；subscribe；onSubscribe/onReady/onComplete/onError | ready 握手 |
+| `ManualFlowScopeProvider` | requestScope/end/dispose/close/isDisposed | 显式结束，不重开 |
+| `FlowPlugins` | set/getErrorHandler、set/getScheduleHandler、set/getLogHandler、reset/lockdown/isLockdown、onError/onSchedule | onLog 是 **internal**，供 debug 实现使用，不是公开调用 API |
+| `FlowAutoDisposePlugins` | set/getOutsideScopeHandler、reset | 只处理 outside-scope |
+| 错误与日志模型 | CompositeFlowException.errors；FlowUndeliverableException；FlowOnErrorNotImplementedException；FlowProtocolViolationException；OutsideFlowScopeException；FlowDebugEvent(kind,label,value,error)/Kind | [协议](operator-reference.md#13-资源scope-与全局插件协议) |
+
+## Android 完整索引
+
+| 文件 | API / 全部参数族 |
+|---|---|
+| `LifecycleAutoDispose.kt` | autoDisposable(owner / lifecycle[,untilEvent] / viewModel)；Flow/RxFlow.bindLifecycle(owner / lifecycle[,untilEvent] / viewModel)；owner/lifecycle.asFlowScopeProvider(untilEvent=ON_DESTROY) |
+| `ViewAutoDispose.kt` | autoDisposable(view,checkAttached=true)；Flow/RxFlow.bindLifecycle(view,checkAttached=true)；View.asFlowScopeProvider(checkAttached=true)；FlowDisposable.bindLifecycle(view,checkAttached=true) |
+| `FlowDisposableLifecycleExtensions.kt` | FlowDisposable.bindLifecycle(owner / lifecycle,untilEvent=ON_DESTROY) |
+| `FlowLifecycle.kt` | facade.bindLifecycle(owner / lifecycle[,untilEvent] / viewModel / scope / view[,checkAttached])，均返回 converter |
+| `FlowLifecycleFilterExtensions.kt` | Flow/RxFlow.filterWhen(owner / lifecycle,vararg atLeastState) |
+| `FlowDisposableContainerExtensions.kt` | FlowDisposable.collectTo / bindDisposableContainer(destination)，返回 Boolean |
+| `AndroidSchedulers.kt` | AndroidSchedulers.mainThread() |
+| `MainThreadSchedulerExtensions.kt` | Flow/RxFlow.subscribeOnMain / observeOnMain(delayError=false,bufferSize=128) / unsubscribeOnMain |
+| `MainThreadDirectScheduler.kt` | scheduleDirectOnMain(action: Runnable) / (action,delay: Long,unit: TimeUnit) |
+
+`LifecycleScopeSubscription.kt` 是 internal 实现，不作为业务 API。Android 模块通过 api 暴露核心库与 Lifecycle 类型，不要向 JVM 模块导入 Android 包。接入坐标/版本读取目标工程 version catalog；当前模块 Manifest 没有专门的权限/组件接入步骤，不为普通 Flow 使用虚构初始化、权限或 keep 规则。
+
+## 快照来源、更新与漂移检查
+
+本次源码范围：
+
+- `/Users/xxf/Documents/developer/java/work_space/KPower/core/reactive-coroutines/src/jvmMain/kotlin`
+- `/Users/xxf/Documents/developer/android/work_space/xxf_android/core/reactive-coroutines-android/src/main/java`
+
+路径用于本机维护证据，业务使用 skill 不要求存在这些绝对路径；可传其他 checkout 的模块根目录。生产 Kotlin 文件集合与内容摘要写在签名快照中，可区分本地未提交改动，优于仅记录 Git HEAD。
+
+```bash
+python3 scripts/build-api-snapshot.py \
+  --core /path/to/KPower/core/reactive-coroutines \
+  --android /path/to/xxf_android/core/reactive-coroutines-android
+
+# 校验同一源码是否已经漂移，不修改文件
+python3 scripts/build-api-snapshot.py \
+  --core /path/to/KPower/core/reactive-coroutines \
+  --android /path/to/xxf_android/core/reactive-coroutines-android \
+  --check
 ```
 
-KDoc/源码通常把 RxStyle 类型约束写为 `T : Any`。观察者接口的协议是：
+在 skill 根目录执行。脚本是针对当前 Kotlin 源码风格的静态抽取器，不是 Kotlin parser/编译器，不展开继承成员、编译器生成 API 或 Java synthetic overload。刷新后人工核对新增语法与函数覆盖，更新本目录、语义参考和示例，再同步 skills/.agents/.claude 三处。
 
-```kotlin
-interface FlowObserver<in T : Any> {
-    fun onSubscribe(disposable: FlowDisposable)
-    fun onNext(value: T)
-    fun onError(throwable: Throwable)
-    fun onComplete()
-}
-```
-
-Observer 形式会通过 `onSubscribe` 交付句柄；lambda 重载直接返回句柄。subscribe 本身不是 suspend；异步完成并不意味着订阅函数必须挂起。
-
-## 操作符类别
-
-### 转换、过滤、生命周期回调
-
-核心 RxFlow operator（`RxFlowOperators.kt`）包括：
-
-- `map((T) -> R)`、`filter((T) -> Boolean)`。
-- `doOnNext`、`doAfterNext`、`doOnError`、`doOnComplete`。
-- `doOnTerminate`、`doAfterTerminate`、`doOnDispose`、`doOnSubscribe`、`doFinally`。
-
-这些是同步 callback 签名；异常通常会成为订阅错误或不可交付错误，具体 callback 二次异常需查实现和测试。另有 `FlowLifecycleExtensions.kt` 的普通 Flow 入口及 `doOnLifecycle`、`doOnEach`，按具体 overload 核实。
-
-### 变换与 fallback
-
-- `skip(count)`、`skipWhile(predicate)`、`ofType<R>()`。
-- `switchMap(transform)`：最新 inner 胜出，新 outer 值会取消旧 inner。
-- `concatMap(transform)`：inner 按 outer 到达顺序串行执行。
-- `defaultIfEmpty(value)`、`switchIfEmpty(fallback)`、`startWithItem`、`startWith`、`startWithArray`、`startWithIterable`。
-- `onErrorReturnItem(value)`、`onErrorReturn(supplier)`、`onErrorResumeNext(fallback)`、`onErrorComplete(predicate)`。
-- `retry()`、`retry(times)`、`retry(times, predicate)`、`retryUntil(stop)`；retry 的 `times` 表示额外重试次数。
-- `repeat()`、`repeat(times)`、`repeatUntil(stop)`；repeat 的 `times` 表示 source 总订阅次数，`repeatUntil` 的 stop callback 在每次正常完成后调用且支持 suspend。
-
-大部分严格 RxFlow transform/predicate 是普通 lambda。`onErrorComplete()` 的默认 predicate 会接受所有异常，因此可能把错误转成正常完成；只在明确业务允许时使用。
-
-### 多 source 与门控
-
-- `combineLatest(other, transform)`：在双方各有首值后，任一侧更新会用最新值计算。
-- `withLatestFrom(other, transform)`：仅当前 source 发值时计算，other 无值时当前值被跳过。
-- `zipWith(other, zipper)`：按位置配对。
-- `concatWith(other)`、`mergeWith(other)`。
-- `takeUntil(predicate)`：参考版本是 native `Flow` 入口，predicate 为 suspend，当前元素先 emit 再判断停止。
-- `takeUntil(other)`、`skipUntil(other)`：other 首次发值或正常完成会触发 gate；other 错误会失败。
-- `delaySubscription(other)`：other 首次发值或正常完成后订阅主 source。
-
-多 source 的完成、空值和错误语义不要从名字猜测；在当前源码及 `FlowCombineGateTest` 里核实。
-
-### 时间操作符
-
-参考 `FlowTimeExtensions.kt`，使用 `kotlin.time.Duration`：
-
-| API | 行为 |
-|---|---|
-| `delay(duration[, scheduler])` | 延迟数据通知；源码注释说明错误默认不延迟。 |
-| `delaySubscription(duration[, scheduler])` | 延迟订阅 source。 |
-| `delaySubscription(other)` | other 触发后才订阅 source。 |
-| `throttleFirst(duration[, scheduler])` | 时间窗口保留第一个值。 |
-| `throttleLast(period[, scheduler])` | 周期 sample；参考实现默认不发送窗口末尾残留值。 |
-| `throttleWithTimeout(timeout[, scheduler])` | timeout/debounce 风格。 |
-
-不要把不同时间 API 的 scheduler 作用点、最后一个窗口值或错误时点假定为相同。时间行为测试见 `FlowTimeExtensionsTest` 和 `RxFlowTimeSourceTest`。
-
-### 生命周期与诊断
-
-其他 operator/file 包括 `distinctUntilChanged`（含 key selector/equality overload）、`distinctUntilChangedByHash`、`debug`、`start/empty` 系列及阻塞 API。使用前 `rg` 目标版本源码查精确名称与 overload，避免把 Kotlin 标准库或 kotlinx Flow operator 当成本库 operator。
-
-## 调度器
-
-核心包下子包 `com.nbxxf.kpower.coroutines.rxstyle.flow.schedulers`：
-
-- `Schedulers.computation()`、`io()`、`single()`、`newThread()`、`trampoline()`、`from(CoroutineDispatcher)`。
-- `subscribeOn(Scheduler)`、`observeOn(Scheduler, delayError = false, bufferSize = 128)`、`unsubscribeOn(Scheduler)`。
-- 便捷 operator `subscribeOnComputation()`、`subscribeOnIO()`、`subscribeOnNewThread()`、`subscribeOnSingle()`、`subscribeOnTrampoline()`。
-
-Android 包 `com.xxf.coroutines.android.schedulers`：
-
-- `AndroidSchedulers.mainThread()`。
-- `subscribeOnMain()`、`observeOnMain(delayError, bufferSize)`、`unsubscribeOnMain()`。
-
-线程职责在 [核心概念与使用指南](rxstyle-flow-guide.md#线程与调度) 中有解释。
-
-## Disposable 家族
-
-子包 `com.nbxxf.kpower.coroutines.rxstyle.flow.disposables`：
-
-| API | 用途 | 重点语义 |
-|---|---|---|
-| `FlowDisposable` | 单订阅取消协议 | `isDisposed` + 幂等 `dispose()`。 |
-| `FlowDisposableContainer` | 管理协议 | `add/remove/delete`。 |
-| `CompositeFlowDisposable` | 多个独立订阅 | 支持 `add/addAll/size/clear/dispose`；`clear` 可复用，`dispose` 永久关闭。 |
-| `SerialFlowDisposable` | 只持有一个当前订阅 | `set` 释放旧值；`replace` 不释放旧值。 |
-| `DisposableFlowObserver` | observer 同时持有 disposable | 适合封装自管理订阅的 observer。 |
-
-Android 子包 `com.xxf.coroutines.android.disposables` 增加 `FlowDisposable.collectTo(container)` 和 `bindDisposableContainer(container)` 便捷扩展。
-
-## AutoDispose 与 Android 扩展
-
-核心子包 `com.nbxxf.kpower.coroutines.rxstyle.flow.autodispose`：
-
-- `autoDisposable(scope: CoroutineScope)` 或 `autoDisposable(scopeProvider)` 创建 converter。
-- `Flow<T>.to(converter)` / `RxFlow<T>.to(converter)` 转换为 terminal-only `FlowSubscribeProxy<T>`。
-- Scope 只贡献 Job 生命周期结束信号，不贡献 RxStyle 数据调度 dispatcher。
-- converter 每次订阅独立创建 scope subscription；调用 `to` 不启动 source。
-
-Android 包 `com.xxf.coroutines.android.autodispose`：
-
-- `autoDisposable(LifecycleOwner[, untilEvent])`、`autoDisposable(Lifecycle[, untilEvent])`，默认 `ON_DESTROY`，`ON_ANY` 不合法。
-- `autoDisposable(ViewModel)` 使用 `viewModel.viewModelScope` 作为取消边界；也可以直接使用核心层 `autoDisposable(CoroutineScope)`。
-- `autoDisposable(View[, checkAttached = true])`，在 View detach 结束；`checkAttached` 控制订阅时未 attach 的 outside-scope 策略。
-- `Flow<T>.bindLifecycle(owner/lifecycle/view/viewModel)` 与 `RxFlow<T>.bindLifecycle(...)` 返回 proxy；生命周期或 scope 结束仅取消本次订阅。
-- `FlowLifecycle.bindLifecycle(...)` 为 Java/静态调用场景提供 converter facade，支持 `LifecycleOwner`、`Lifecycle`、`View`、`ViewModel` 和 `CoroutineScope`。
-- `FlowDisposable.bindLifecycle(...)` 是订阅后包装方式；新链路优先在 subscribe 前用 converter，以得到 listener-ready 握手。
-- `LifecycleOwner.asFlowScopeProvider(...)`、`Lifecycle.asFlowScopeProvider(...)` 可把 Android 生命周期接入核心转换器。
-
-Android `com.xxf.coroutines.android.lifecycle` 的 `filterWhen(owner/lifecycle, vararg states)` 仅按当前 lifecycle state 过滤 onNext，不取消 upstream。
-
-## 阻塞终端 API
-
-参考 `FlowBlockingExtensions.kt`：`blockingFirst`、`blockingLast`、`blockingForEach`、`blockingSubscribe`。它们会阻塞当前调用线程，Android 主线程禁止调用。签名、timeout/default 值 overload 必须查当前文件；它们不能替代后台异步订阅的调度设计。
-
-## 快速定位源码
-
-核心工程 `src/jvmMain/kotlin/com/nbxxf/kpower/coroutines/rxstyle/flow/`：
-
-| 文件/目录 | 内容 |
-|---|---|
-| `Flows.kt` | source factory |
-| `RxFlow.kt`、`FlowRxInterop.kt` | 核心类型、普通 Flow 订阅 adapter |
-| `RxFlowOperators.kt`、`FlowTransformExtensions.kt` | 映射、过滤、变换 |
-| `FlowErrorExtensions.kt`、`FlowRetryExtensions.kt`、`FlowRepeatExtensions.kt` | 恢复与重试/重复 |
-| `FlowCombineExtensions.kt`、`FlowGateExtensions.kt` | 组合与 gate |
-| `FlowTimeExtensions.kt` | 时间操作符 |
-| `RxFlowScheduling.kt`、`schedulers/` | 调度与 worker |
-| `FlowPlugins.kt`、`disposables/`、`observers/` | 错误插件、资源管理、Observer |
-| `autodispose/` | Scope provider/converter/proxy |
-
-Android 工程 `src/main/java/com/xxf/coroutines/android/`：`autodispose/`、`disposables/`、`lifecycle/`、`schedulers/`。
-
-核心行为测试 `src/jvmTest/kotlin/com/nbxxf/kpower/coroutines/rxstyle/flow/`，按主题查 `FlowAutoDisposeTest`、`FlowDisposableTest`、`FlowBlockingTest`、`FlowCombineGateTest`、`FlowTimeExtensionsTest`、`RxFlowCoreTest`、`RxFlowRetryDistinctTest`、`RxFlowSemanticsTest`、`RxFlowTransformTest`、`RxFlowTimeSourceTest` 和 `TestFlowSchedulerTest`。
+验证行为时看 `src/jvmTest/.../rxstyle/flow`：RxFlowCoreTest、RxFlowSemanticsTest、RxFlowTransformTest、RxFlowRetryDistinctTest、RxFlowTimeSourceTest、FlowCombineGateTest、FlowTimeExtensionsTest、FlowAutoDisposeTest、FlowDisposableTest、FlowBlockingTest、FlowDebugTest、TestFlowSchedulerTest。这些是源码证据入口，不代表当前任务已运行全部测试。
