@@ -64,6 +64,22 @@
 
 先处理正确性，再压缩写法。不要为了“响应式风格”把简单的一次 suspend 顺序逻辑拆成难以解释的多个信号；也不要在已有事件流里用嵌套 subscribe 搭一个无法统一取消的异步树。
 
+## Flow 链路不可随意拆断
+
+当业务已经以 `Flow` 表达输入、状态或事件时，默认让后续处理继续留在同一条 Flow 链。不要为了在普通 suspend 代码中“拿到一个值”，对中间流调用 `first()`、`firstOrNull()`、`single()`、`last()`、`toList()` 或 `collect()`，然后再 `launch`、重新 `flow {}` 或 `Flows.just(...)` 接下一步。这样会把取消、错误、调度和生命周期所有权切成两段，并常常悄悄丢掉后续更新。
+
+| 要表达的意图 | 保持在 Flow 中的做法 | 不应采用的拆断方式 |
+|---|---|---|
+| 上游每次值变化都计算新结果 | `map` / `transform`；异步结果用 `switchMap`、`concatMap` 或原生 `flatMap*` | `val value = upstream.first()` 后只计算一次 |
+| 读取两个持续状态的最新组合 | `combine` / `withLatestFrom` | 在一个 `collect` 中对另一 Flow 调 `first()` |
+| 每个事件触发挂起单值任务 | `switchMap { Flows.fromSuspend { work(it) } }`，或使用支持 suspend transform 的原生 operator | `events.collect { launch { work(it) } }` |
+| 每个事件接入一个返回 Flow 的任务 | 直接 `switchMap { repository.observe(it) }` / `concatMap { ... }` | `repository.observe(it).first()` 后再 `Flows.just(...)` |
+| 仅需要符合契约的一次快照 | 在明确终端函数/边界调用 `first()`，并定义空流、错误、取消与不再观察后续值 | 用 `first()` 规避 operator 的签名或临时“接上”同步代码 |
+
+“一次性快照”是少数例外，而不是 Flow 与 suspend 之间的默认桥梁：例如 repository API 明确要求当前配置的一个值，且调用完成后不应继续订阅更新。此时把提取放在该 API 的边界，并在名称、KDoc 或调用点体现单次语义；不要把它藏在 ViewModel/UseCase 的中间步骤。
+
+如果某个 RxStyle operator 的 transform 是同步的，不能直接调用 suspend 函数，也不能因此先对 Flow 取 `first()`。将挂起工作放进惰性 `Flows.fromCallable` / `Flows.fromSuspend` / `Flows.defer` 返回的 inner Flow，再用 `switchMap` 或 `concatMap` 组合；若需要的语义属于原生 Flow，则明确保留 native Flow 类型、import 和 operator 边界。这样取消、错误恢复与生命周期仍能沿整条链传播。
+
 ## 可编译的搜索链路
 
 下面是一份可放入 Android 业务模块的 Kotlin 示例。假设已按目标工程现有 Gradle 接入两个模块与 AndroidX Lifecycle；不猜 Maven 版本。UI 回调接受状态模型，由调用方负责 strings.xml 文案。函数在非 suspend 入口调用，owner 对应页面/View 生命周期；每次调用只建立一份订阅。

@@ -24,6 +24,7 @@ description: 深度指导 KPower reactive-coroutines 与 reactive-coroutines-and
 3. 以目标仓库当前源码、README 和测试为准复核签名和行为。本 skill 的 API 事实来自所引用的 `KPower/core/reactive-coroutines` 与 `xxf_android/core/reactive-coroutines-android` 检出版本。
 4. 先选 source 和错误路径，再定调度和取消所有者；给出完整可理解的链路和适用边界。
 5. 检查静态类型、扩展函数 import、RxFlow / 原生 Flow 语义边界、nullable 和 Android/JVM 模块边界。
+6. 已有或即将产生 `Flow` 时，优先将后续业务继续表达为 Flow operator 链；只有业务契约确实要求“一次性值”时，才在清晰的终端边界提取该值。
 
 | 需要处理 | 阅读资料 |
 |---|---|
@@ -46,6 +47,10 @@ description: 深度指导 KPower reactive-coroutines 与 reactive-coroutines-and
 - `RxFlow` 同时实现 `Flow`。静态类型被收窄成 `Flow<T>` 后，同名扩展可能解析到 kotlinx Flow operator；检查 receiver、import 和推断类型。
 - 该链路不提供 Flowable 背压协议。`observeOn(bufferSize)` 使用可增长分段队列，bufferSize 不是积压上限；RxFlow → collect 桥接使用无界 channel。不能把时间/缓冲/桥接操作符当作自动限流；`fromCallback` 参考实现的 `onNext` 使用 `trySend` 且不返回发送结果，高频源需评估缓冲满时的事件丢失。
 - `map/filter` 的本库专用声明仅在 RxFlow；普通 Flow 的同名 kotlinx operator、组合函数的 suspend transform 与本库同步 transform 不得混淆。`fromCallable/fromSuspend/create/defer` 支持 suspend，但不自动切 IO；同模块 `suspendAsFlow` 默认 IO。
+- **保持响应式链路完整**：不要为了衔接下一步逻辑而在链中调用 `first()`、`firstOrNull()`、`single()`、`last()`、`toList()`、`collect()` 等终端 API，把 Flow 提前取成值后再以 suspend/`launch` 方式继续。它会截断取消、错误、调度、背压/缓冲和生命周期归属，使一个业务链分裂成难以审查的控制流。
+- 下游仍是数据流、依赖上游持续更新，或需要表达并发/取消/错误恢复时，使用 `map`、`transform`、`filter`、`combine`、`withLatestFrom`、`switchMap`、`concatMap`、`merge`、`retry`、`catch` 等与语义匹配的 operator 组合。异步函数返回单值时，用 `fromCallable` / `fromSuspend` 作为惰性 inner；异步函数已返回 `Flow` 时直接组合该 Flow，不能先 `first()` 再重新包一层。
+- `first()` 等只允许处于明确的“一次性读取”边界，例如 API 契约本身只需要一个快照、Flow 生命周期被业务定义为只取一项，且不再需要继续响应上游更新。使用时必须说明截断规则（空流、超时/取消、错误、后续值）及调用方的 scope；不能把它当作让 operator 回调“方便调用 suspend”的通用逃生门。
+- operator 的 lambda 是否可 suspend 以签名为准：不能仅因回调为同步 lambda 就抽取 Flow 的首项；应优先选择支持 suspend 的原生 Flow operator，或将挂起工作放入 `fromCallable` / `fromSuspend` / `defer` 返回的惰性 Flow，再以相应的组合 operator 接回主链。
 - `concatMap/switchMap` transform 是同步 factory；返回惰性 inner，在 `fromCallable/defer` 内做请求。concatMap 串行订阅 inner，但 transform 在 outer 到达时已执行；不能在 factory 中提前做副作用。
 - 长期事件源的单次任务错误在 inner 内恢复；在 switchMap/concatMap 外恢复会让整条事件流先终止。retry 是额外次数，repeat 是总次数；重试写操作必须确认幂等性。
 - empty fallback 只响应零项正常完成；门控 other 的正常完成也会触发。takeUntil(predicate) 包含触发项。throttleLast 丢完成前未采样尾值，throttleWithTimeout 正常完成 flush 尾值。
@@ -57,6 +62,7 @@ description: 深度指导 KPower reactive-coroutines 与 reactive-coroutines-and
 
 - 禁止虚构当前模块不存在的 RxStyle flatMap、exhaustMap、timeout、retryWhen 或未确认的重载；需要时显式进入原生 Flow 并给出 import/类型边界。
 - 禁止嵌套 subscribe 或在 callback 里随意 launch，让子任务脱离主链取消与错误归属。
+- 禁止在响应式业务链中以 `first()` / `firstOrNull()` / `single()` / `last()` / `toList()` 提前终止 Flow，再通过普通 suspend 顺序代码或 `launch` 人工拼接下一段；除非这是已声明的一次性终端边界。
 - 禁止把只读任务的 switchMap 随意用于必须完成的写操作，或把多处订阅当共享/缓存。
 - 禁止只给函数名而不交代业务效果；复杂链必须说明值、错误和取消轨迹。
 
