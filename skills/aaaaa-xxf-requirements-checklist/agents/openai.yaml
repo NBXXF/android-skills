@@ -1,0 +1,4 @@
+interface:
+  display_name: "需求核查与对齐"
+  short_description: "按稳定编号表格核查需求，独立澄清与资源缺口，多轮逐项解决并移除已完成项"
+  default_prompt: "使用 $aaaaa-xxf-requirements-checklist 核对需求、设计与当前实现：按 triggers.md 识别入口，按 references/audit-method.md 核查取证，按 references/checklist-format.md 维护 <需求名>-实现核查问题清单.md（四类表格、编号跨表唯一、删行不重排），按 references/multi-round-loop.md 处理多轮修复与确认；澄清答复先记录决策再实现，已完成项核验后从表格移除。"
