@@ -8,6 +8,9 @@
 - "Retrofit ApiService 应该放哪里"
 - "DTO/PO/VO/Mapper 应该放哪个目录"
 - "路由注册放 api 还是 di"
+- "跳转页面是不是必须走路由"
+- "怎么拿到另一个模块的 Fragment"
+- "可以用 Class.forName 跳转页面吗"
 - "这段代码是否违反 Android 模块架构约束"
 - "ViewModel 直接调 Repository 可以吗"
 - "当前模块里这些杂项代码应该放哪"
@@ -29,3 +32,7 @@
   - 期望：触发，并要求放入 `common/`，同时确认没有承载业务主流程
 - "路由表和页面绑定注册放哪里"
   - 期望：触发，并要求放入 `di/`，不要放在 `api/`、`presentation/` 或包根目录
+- "我想直接 startActivity 跳到另一个模块的页面"
+  - 期望：触发，并要求改为路由 URI 跳转，注册放目标模块 `di/`；指出多模块解耦、多变体、拦截器等收益
+- "用反射根据类名字符串创建页面/Fragment"
+  - 期望：触发，并禁止反射跳转，要求改路由注册 + URI；提示与 `aaaaa-xxf-code-shrinking-guard` 的混淆风险联动

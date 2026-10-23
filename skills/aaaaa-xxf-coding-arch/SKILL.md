@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-coding-arch
-description: Android/Kotlin 模块架构强制规范。新增、维护或重构 Android library/app/demo 模块时必须遵守；明确单个模块工程目录、包内分层、UI 技术选型、依赖方向、公共 API、optional、聚合 libs 和 demo/sample 边界。
+description: Android/Kotlin 模块架构强制规范。新增、维护或重构 Android library/app/demo 模块时必须遵守；明确单个模块工程目录、包内分层、UI 技术选型、依赖方向、强制路由导航（跳转页面、获取 Fragment 必须走路由，禁止反射）、公共 API、optional、聚合 libs 和 demo/sample 边界。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -102,6 +102,14 @@ description: Android/Kotlin 模块架构强制规范。新增、维护或重构 
 - 模块路由注册、Router 表、路由到页面/服务的绑定也统一放 `di/`，不要放在 `api/`、`presentation/` 或包根目录。
 - `api/` 只放 Retrofit ApiService，不放路由协议、Facade、Provider 或业务入口；具体注册和实现绑定由 `di/` 负责。
 
+### 强制路由导航
+
+- 所有页面跳转（启动 Activity、startActivityForResult、展示 DialogFragment）和 Fragment 获取必须通过当前项目的路由框架按 URI 完成；不区分模块内外，模块内跳转也统一走路由。
+- 目的：多模块解耦（调用方不依赖目标模块的类）、多变体（同一 URI 在不同 flavor/宿主可绑定不同实现）、统一拦截（登录、权限、埋点、防抖收敛在拦截器）、统一结果与失败处理。
+- 禁止反射实现跳转或获取页面组件：`Class.forName`、字符串类名实例化、`Intent.setClassName`、按字符串 tag 查找业务 Fragment 等一律禁止；路由框架内部实现不受此限制。
+- 路由 URI 按全局路由表统一规划（`scheme://模块/页面/{参数}`），注册集中放各模块 `di/`，不要在 UI 层散落硬编码跳转字符串。
+- 项目已有路由框架时必须沿用既有框架，不得混入第二套路由；具体框架用法（KPower Router/di-android、ARouter、DRouter、Navigation）、拦截器与违规修正示例见 `references/routing.md`。
+
 ### UI 数据驱动
 
 - UI 层不得硬编码业务集合：菜单、Tab、入口、Section、列表项、业务文案、图标、跳转 action 必须由 `service` 构建，`viewmodel` 暴露数据源，UI 循环渲染。
@@ -152,6 +160,7 @@ description: Android/Kotlin 模块架构强制规范。新增、维护或重构 
 - [ ] 业务逻辑全部落在 `service/`，没有用 Manager/Tool/Utils/Helper 等承载业务？
 - [ ] DTO/PO/VO/Mapper 分别放在 `domain/dto`、`domain/po`、`domain/vo`、`domain/mapper`，展示模型和 UI State 未直接复用网络 DTO？
 - [ ] DI 注册和路由注册都放在 `di/`，未散落到 `api/`、`presentation/` 或包根目录？
+- [ ] 页面跳转和 Fragment 获取全部走路由 URI，未跨模块直接 `Intent(目标类)`、直接构造目标 Fragment，也没有 `Class.forName`、`setClassName` 等反射式跳转？
 - [ ] UI 集合和业务内容由 Service/ViewModel 数据驱动，未写死条目数量、索引分支或固定入口？
 - [ ] 新 UI 默认使用 Activity + Compose 或项目既有 Compose Navigation，未新增普通 `res/layout/*.xml`？
 - [ ] Activity 只做入口和生命周期处理，页面状态由 ViewModel/UI state 驱动，Compose Screen 不直接承载业务取数？
