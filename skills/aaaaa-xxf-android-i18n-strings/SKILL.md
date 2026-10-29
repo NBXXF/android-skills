@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-android-i18n-strings
-description: Android 国际化字符串门禁。新增或修改 Kotlin/Java/XML/Compose UI、Toast、Dialog、Snackbar、错误提示、按钮、标题、hint、contentDescription、Manifest label、菜单、Preference、空态等用户可见文案时必须使用；语言切换和语言敏感字符串读取优先使用 com.NBXXF.xxf_android:lib_i18n 的 `setAppLanguage(...)`、`resetAppLanguage()`、`restoreCachedAppLanguage()`、`getLocalizedString(...)`、`resString()` 等 API；发现既有硬编码显示文案、字符串拼接展示文案、重复散落文案时主动提取到 strings.xml/plurals，并避免误改业务常量、协议字段、key、tag、路由、配置值、日志和测试 fixture。
+description: Android 国际化字符串门禁。涉及用户可见日期或时间格式化展示时必须使用，展示格式须有明确需求、设计稿或用户确认依据，禁止推断默认格式。新增或修改 Kotlin/Java/XML/Compose UI、Toast、Dialog、Snackbar、错误提示、按钮、标题、hint、contentDescription、Manifest label、菜单、Preference、空态等用户可见文案时必须使用；语言切换和语言敏感字符串读取优先使用 com.NBXXF.xxf_android:lib_i18n 的 `setAppLanguage(...)`、`resetAppLanguage()`、`restoreCachedAppLanguage()`、`getLocalizedString(...)`、`resString()` 等 API；发现既有硬编码显示文案、字符串拼接展示文案、重复散落文案时主动提取到 strings.xml/plurals，并避免误改业务常量、协议字段、key、tag、路由、配置值、日志和测试 fixture。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -16,6 +16,15 @@ description: Android 国际化字符串门禁。新增或修改 Kotlin/Java/XML/
 - 不确定字符串是不是业务常量时，先沿调用链确认用途；仍不确定时保留原样并说明风险，不要为了消除硬编码盲目迁移。
 - 触达 Android UI 文件时，要主动检查同一文件和同一 UI 组件内的既有硬编码文案，不只处理用户点名的那一行。
 - 国际化改动不能改变业务值、资源 ID 对外契约、构建配置、运行分支或埋点/协议上报；遇到不确定边界时，宁可保留并记录，也不要猜测迁移。
+
+## 日期与时间展示格式
+
+- 新增或修改用户可见的日期、时间格式化展示时，必须先找到明确需求、设计稿标注/示意或用户确认作为依据；没有默认展示格式一说。
+- 禁止根据个人习惯、现有工具的默认格式、系统 Locale 或其他页面的格式自行推断。已有格式化工具只能在展示规则确认后复用，不能作为需求依据。
+- 需求或设计稿未明确格式，或示例不足以确定展示规则时，必须按 `aaaaa-xxf-clarify-question` 先澄清；确认前暂停相关格式化实现，不得自行添加默认格式或兜底格式，可以继续不依赖该决策的工作。
+- 对影响展示结果的日期字段、排列顺序、分隔符、补零、时间精度、12/24 小时制、时区及相对时间规则，存在歧义时必须确认，不得自行补全。设计稿示例只能支持其明确表达的规则，不能据此猜测未展示的边界行为。
+- 用户明确要求跟随系统、Locale 或复用某个既有格式时，按已确认要求实现；不能把这些选项当成未说明时的默认值。
+- 本节约束用户可见展示，不据此修改接口传输、序列化、存储、签名、日志等机器格式。
 
 ## lib_i18n 优先级
 
@@ -136,7 +145,7 @@ titleView.text = context.getString(R.string.home_welcome_back, userName)
 - 一个完整展示句子建一个 key，用 `%1$s`、`%2$d` 等位置参数。
 - 需要数量变化时优先使用 `plurals`，不要自己拼“个/条/次”。
 - 列表拼接、范围拼接、A/B 两个业务名组合展示时，也要把完整展示模板放入资源，例如 `%1$s 至 %2$s`，不要只提取固定片段。
-- 日期、金额、百分比、文件大小等使用当前项目已有格式化工具或 locale-aware API，避免把业务格式硬塞进字符串拼接。
+- 日期与时间须先按“日期与时间展示格式”确认展示规则，再选择符合规则的项目格式化工具或 locale-aware API；金额、百分比、文件大小等使用当前项目已有格式化工具或 locale-aware API，避免把业务格式硬塞进字符串拼接。
 - 参数来自用户输入或服务端时，确保格式化前后仍经过必要的转义、脱敏或空值兜底。
 - 字符串里有 `%` 字面量时写成 `%%`；有单引号、换行、HTML/span 标记时按 Android string resource 规则处理。
 - 不为了复用拆出“前缀”“后缀”“冒号”等碎片 key，除非它们本身就是独立 UI 文案。
@@ -173,6 +182,7 @@ rg -n '@\\{[^}]*"[^"]+"' --glob '*.xml'
 
 完成后要简要说明：
 
+- 涉及日期或时间展示时，说明格式依据及已确认规则；仍待澄清时说明未实现的部分。
 - 新增或复用的 string/plurals key。
 - 哪些硬编码被判定为业务常量并保留，原因是什么。
 - 是否排除了 Gradle/config/key/业务运算相关字符串，原因是什么。
@@ -182,6 +192,8 @@ rg -n '@\\{[^}]*"[^"]+"' --glob '*.xml'
 
 ## 审查清单
 
+- 日期与时间展示是否有明确需求、设计稿或用户确认依据，是否排除了工具默认值、系统 Locale 和其他页面格式的擅自推断？
+- 展示规则存在歧义时，是否先澄清并记录决策，且未擅自实现默认或兜底格式？
 - 新增或触达的用户可见文案是否都来自 `strings.xml`、`plurals` 或已有资源？
 - 是否有 `"a" + value + "b"`、多个资源碎片拼句子、硬编码冒号/单位/标点？
 - 是否误把 key、tag、路由、协议字段、配置常量、埋点名迁移到资源？
