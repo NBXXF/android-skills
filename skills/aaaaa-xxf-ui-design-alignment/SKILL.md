@@ -77,7 +77,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 
 ## 需要按需读取的 references
 
-- 做 Compose 页面、复杂列表、弹窗、横屏/平板/折叠屏、多窗口、键盘、RTL、深色模式或无障碍适配时，读取 `references/compose-adaptation-scenarios.md`。
+- 做 Compose 页面、复杂列表、弹窗、横屏/平板/折叠屏、多窗口、键盘、RTL、深色模式或无障碍适配，以及组件横/纵排布尺寸、相对定位叠层、文字超长、图片缩放等适配决策时，读取 `references/compose-adaptation-scenarios.md`。
 - 实现文本、图片、按钮、标签、输入框、卡片、Lazy item 等会受内容影响的组件时，读取 `references/compose-dynamic-layout-decisions.md`。
 
 ## Compose 动态布局原则
