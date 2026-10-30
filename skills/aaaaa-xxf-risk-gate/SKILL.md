@@ -16,6 +16,7 @@ description: 为 Android 项目改动给出合并/发布风险结论。用于公
 ## 必查风险
 
 - 发布风险：`publishVersion`、`publishGroup`、`moduleName`、Maven 坐标、依赖暴露变化。
+- 交付责任：可发布 Maven library/公共库改动，未按 `aaaaa-xxf-maven-library-release-guard` 的"职责收尾与强制确认"完成清单自查和用户主动确认前，不得给 `Pass`。
 - 兼容风险：minSdk、targetSdk、Android 版本行为差异、二进制/API 兼容。
 - 宿主风险：Manifest 合并、资源冲突、ProGuard/R8、ABI、FileProvider authority。
 - 隐私权限：相机、相册、存储、定位、录音、剪贴板、设备标识。

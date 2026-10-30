@@ -1,7 +1,6 @@
 ---
-disable-model-invocation: true
 name: aaaaa-xxf-maven-library-release-guard
-description: Android Maven 发布库的构建变体、运行时配置与混淆门禁。新增、维护、重构或发布 Android Library/AAR，修改 buildFeatures、BuildConfig、maven-publish、singleVariant、发布脚本、调试开关、环境开关、混淆注解或 proguard/consumer 规则时必须使用；防止 release AAR 将库内 BuildConfig.DEBUG 常量折叠为 no-op、GONE、错误分支，或把混淆规则误当成自动保留方案。
+description: Android Maven 发布库的构建变体、运行时配置、混淆与职责收尾门禁。新增、维护、重构或发布 Android Library/AAR（含应用 publish_maven.gradle 的模块），修改 buildFeatures、BuildConfig、maven-publish、singleVariant、publish_maven.gradle、发布脚本、POM、Maven 坐标或版本、调试开关、环境开关、混淆注解或 proguard/consumer 规则时必须使用；防止 release AAR 将库内 BuildConfig.DEBUG 常量折叠为 no-op、GONE、错误分支，或把混淆规则误当成自动保留方案。给出交付结论前必须完成职责收尾清单，并用 AskUserQuestion 强制让用户主动确认是否做到位，未确认不得 Pass。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -16,7 +15,8 @@ description: Android Maven 发布库的构建变体、运行时配置与混淆�
 
 满足任一条件即按“可发布 Maven Library”处理：
 
-- 应用了 `maven-publish` 或仓库发布脚本。
+- 应用了 `maven-publish` 或仓库发布脚本。特别地，lib 应用了 `publish_maven.gradle`（如 `apply(from = "../../../publish_maven.gradle")`）即为发布库/Maven 库，无论发布配置写在何处。
+- 配置了 `publishing`、`MavenPublication`、`singleVariant("release")`。
 - 配置了 `publishing`、`MavenPublication`、`singleVariant("release")`。
 - 定义了 Maven group、artifact、version 或 publish task。
 - 产物会被其他独立工程以 AAR/Maven 坐标消费。
@@ -61,7 +61,7 @@ description: Android Maven 发布库的构建变体、运行时配置与混淆�
 2. 扫描目标模块：
 
 ```bash
-rg -n "BuildConfig|buildConfigField|buildConfig\\s*=\\s*true|singleVariant|MavenPublication|maven-publish|@Keep|consumer-rules|proguard-rules" MODULE
+rg -n "BuildConfig|buildConfigField|buildConfig\\s*=\\s*true|singleVariant|MavenPublication|maven-publish|publish_maven|@Keep|consumer-rules|proguard-rules" MODULE
 ```
 
 3. 如果命中混淆注解或规则，继续读 [references/obfuscation.md](references/obfuscation.md)，确认是“源码注解 + 规则”并存，而不是二选一。
@@ -103,6 +103,38 @@ javap -classpath /tmp/library-release.jar -c -p fully.qualified.EntryClass
 
 若有宿主工程，至少编译一个实际消费该 Maven 坐标的 debug variant；发布前按发布流程检查 POM、坐标、release AAR，以及混淆注解和 pro 规则是否同时生效。
 
+## 职责收尾与强制确认
+
+### 职责描述
+
+谁封装、谁改造的发布库，谁负责收尾。下游多团队按 Maven 坐标消费，发布者不得把坑留给接入方：问题必须在自己模块内消化，不得以"下游自己注意""后续再补"收场。这是硬性门禁，不是建议，不因任务紧急、改动小或用户未提及而豁免。
+
+### 收尾清单
+
+交付前逐项自查，"做到位"= 以下全部满足，缺任一项即视为未做到位，必须先补齐再进入强制确认：
+
+- API 二进制兼容：新增/变更公共 API 有安全默认值；删除或变更已发布符号有全仓调用方证据，或已加 `@Deprecated` 加迁移说明。
+- 文档同步：README、接入文档、变更记录已更新；破坏性变更写明迁移步骤。
+- 混淆规则同步：新增注解同步维护 `consumer-rules.pro`，下游 minify 后仍可解析。
+- demo/sample：有接入示例的库，demo 已同步新 API 并编译通过。
+- release 变体验证：release unit-test、release AAR 字节码检查、宿主集成编译至少完成一项且覆盖本次改动。
+- 遗留问题：未解决的 TODO、已知缺陷、临时方案已明确记录在案，不以"应该没问题"沉默发布。
+
+### 强制询问
+
+给出交付结论前，必须用 AskUserQuestion 向用户发起确认，让用户主动选择回复。无例外：禁止模型代答、禁止自由文本默认通过、禁止默认用户同意、禁止跳过确认直接发布：
+
+1. 全部做到位，可以交付/发布
+2. 有残留问题，继续修（列出具体项）
+3. 有残留但接受，先记录到 `vibe-coding-clarify.md` 再发布
+
+规则：
+
+- 用户未选择前，不得给出交付结论，不得执行发布动作。
+- 用户选 2：回到修复，修完后重新发起确认。
+- 用户选 3：必须先按 `aaaaa-xxf-clarify-question` 的记录格式把接受的风险写入对应模块 `vibe-coding-clarify.md`，风险结论最高 `Warn`。
+- 用户跳过、忽略或中断确认：按未确认处理，风险结论 `Block`。
+
 ## 交付结论
 
 最终必须说明：
@@ -112,4 +144,5 @@ javap -classpath /tmp/library-release.jar -c -p fully.qualified.EntryClass
 - 如果涉及混淆，补了哪些注解，保留了哪些 `proguard-rules.pro` / `consumer-rules.pro` 规则。
 - release 单测、release AAR 和宿主集成分别验证了什么。
 - 是否删除公共符号，以及对应兼容风险。
-- 风险结论：存在 Library 自身 BuildConfig 业务依赖、混淆注解/规则不同步，或未验证 release 产物时为 `Block`；全部通过后为 `Pass`。
+- 职责收尾确认：用户主动选择的选项；选择"有残留但接受"时附 `vibe-coding-clarify.md` 记录路径。
+- 风险结论：存在 Library 自身 BuildConfig 业务依赖、混淆注解/规则不同步、未验证 release 产物，或未完成职责收尾强制确认时为 `Block`；用户选择"有残留但接受"并已记录决策时最高 `Warn`；全部通过且用户主动确认做到位后为 `Pass`。

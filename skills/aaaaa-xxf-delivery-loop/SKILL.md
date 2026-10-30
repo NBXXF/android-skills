@@ -23,7 +23,7 @@ description: 处理 Android 项目中的通用编码任务交付流程。用于 
 6. 涉及 VO/DTO/PO/DO/BO/Entity/Query/Command 等领域模型命名时，读 `aaaaa-xxf-model-naming-guidelines`。
 7. 需要判断测试范围时读 `aaaaa-xxf-test-strategy`；需要补测时读 `aaaaa-xxf-unit-test-writer`。
 8. 完成修改后进入 `aaaaa-xxf-auto-test-orchestrator`，运行最小相关 Gradle 验证。
-9. 改动涉及可发布 Android Maven Library/AAR、`BuildConfig`、`buildFeatures`、`maven-publish`、发布 variant、调试/环境开关或宿主初始化配置时，必须读 `aaaaa-xxf-maven-library-release-guard`，完成 release 变体与 AAR 字节码门禁。
+9. 改动涉及可发布 Android Maven Library/AAR（含应用了 `publish_maven.gradle` 的模块）、`BuildConfig`、`buildFeatures`、`maven-publish`、发布脚本/POM、Maven 坐标或版本、发布 variant、调试/环境开关或宿主初始化配置时，必须读 `aaaaa-xxf-maven-library-release-guard`，完成 release 变体与 AAR 字节码门禁，并按其"职责收尾与强制确认"一节用 AskUserQuestion 让用户主动确认是否做到位。
 10. 改动跨模块、触及公共 API、生命周期、线程、权限、存储、网络、图片、发布配置时，读 `aaaaa-xxf-code-reviewer` 和 `aaaaa-xxf-risk-gate`。
 11. 改动涉及 app、工程内 library 或可发布 Maven library，且新增或修改反射、注解、泛型解析、序列化、ServiceLoader/JNI、按名称访问、依赖、混淆或发布配置时，必须读 `aaaaa-xxf-code-shrinking-guard` 并完成对应 app rules/consumer rules、release 产物和 minify 门禁，不得因用户未提混淆或模块不发布 Maven 而跳过。
 12. 根据 Figma/Figama、MasterGo、蓝湖、摹客、截图或设计稿实现/修复 UI 时，读 `aaaaa-xxf-ui-design-alignment`。
@@ -50,4 +50,4 @@ description: 处理 Android 项目中的通用编码任务交付流程。用于 
 
 ## 输出要求
 
-最终说明：改了什么、跑了什么验证、是否补测、主要残余风险。
+最终说明：改了什么、跑了什么验证、是否补测、主要残余风险；涉及可发布 Maven Library 维护/改造时，还必须附上职责收尾强制确认的用户选择结果，未完成确认不得结束交付。

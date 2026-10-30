@@ -67,6 +67,7 @@ defaultConfig {
 7. Move reusable build constants and publish configuration into Gradle properties before wiring module build files.
 8. For credentials, define property names in Gradle code and document expected keys, but require actual values from user-level Gradle properties, CI secrets, or ignored local files.
 9. When the repo is not fully migrated, fail loudly with file and line references so the old style is visible.
+10. When the edit touches a publishable Maven library (module applying `maven-publish`, `publish_maven.gradle`, Maven coordinates, or publish scripts), also run the "职责收尾与强制确认" gate from `aaaaa-xxf-maven-library-release-guard`: complete the checklist and require an explicit AskUserQuestion confirmation from the user before any release/publish conclusion; without it the conclusion is `Block`.
 
 ## Gradle Property Governance
 
@@ -192,5 +193,6 @@ When this skill is used on a real repo, report:
 - whether Android SDK versions are centralized in root `gradle.properties`
 - whether reusable non-secret build configuration is centralized in root `gradle.properties`
 - whether publish credentials/signing secrets are externalized through Gradle properties without committed secret values
+- for publishable Maven library changes: the user's AskUserQuestion confirmation result from the 职责收尾 gate, and the `vibe-coding-clarify.md` path if residual risks were accepted
 - whether the repo is fully catalog-driven or still in migration
 - any unresolved legacy usage that requires follow-up
