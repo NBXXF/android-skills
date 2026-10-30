@@ -4,6 +4,9 @@
 Kotlin 子类，供 Manifest 的 `${applicationId}.Xxx` 占位注册使用；同时按变体生成
 `uri → stub Class` 路由表，让共享业务代码以稳定 URI 访问组件，不感知马甲包差异。
 
+架构收益:每个变体实际注册进 Manifest 的四大组件都在自己的 applicationId 包下,共享实现类
+不进注册清单——多渠道注册面天然区分(详见 `store-compliance-differentiation.md`)。
+
 组件可来自 app 源码、工程内 library，或带索引的 Maven AAR。适用于 Activity、Service、
 BroadcastReceiver、ContentProvider 的共享实现(插件不检查 Android 组件继承体系，
 正确组件类型与 Manifest 注册由宿主负责)。

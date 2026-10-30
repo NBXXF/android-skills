@@ -42,6 +42,7 @@
 - 自冲突、源类与生成类同名、同包同名
 - applicationId 包、按包名生成、生成到 applicationId 包下
 - ContentProvider authorities、按变体 authorities
+- 四大组件类名、组件类名混淆、Manifest 组件 keep、注册面差异、注册清单指纹
 
 ## 四、路由体系
 

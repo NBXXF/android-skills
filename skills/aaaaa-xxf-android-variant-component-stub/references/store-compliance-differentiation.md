@@ -22,6 +22,11 @@
 **换皮不换魂**(同一产品只改图标文案重复上架)无论怎么处理都会在行为/代码层露馅,
 且本身就是政策违规,不要走这条路。
 
+其中最"藏不掉"的一维是**清单特征里的四大组件**:AGP/aapt 的组件 keep 规则保证
+Manifest 注册的 Activity/Service/BroadcastReceiver/Provider 类名不混淆、不裁剪。
+同源马甲若直接注册共享实现类,各变体的 Manifest 声明与 DEX 中这批类名**完全一致**,
+构成最直接的指纹锚点——这部分恰恰是混淆手段覆盖不到的。
+
 ## 二、合规差异化落地(结合变体组件 + 路由架构)
 
 ### 1. 品牌差异:flavor 资源与文案
@@ -56,7 +61,25 @@ dependencies {
   不需要运行时开关去伪装功能差异。
 - uri scheme 可按品牌区分(`branda://` / `brandb://`),deeplink 与 Manifest 一一对应。
 
-### 3. 工程差异(正当发布实践的结果)
+### 3. 注册面差异:四大组件挂到各变体 applicationId 包下(本插件的核心价值)
+
+Manifest 注册的四大组件类名不能混淆,那就在架构上让**每个变体注册的本来就是不同的类**:
+插件按变体生成 `${applicationId}.Xxx` 空壳子类承接 Manifest 占位注册,共享实现类不再进 Manifest。
+
+- 变体 A 注册 `com.branda.MainActivity` / `com.branda.PlayerService` / `com.branda.provider`…
+- 变体 B 注册 `com.brandb.MainActivity` / `com.brandb.PlayerService` / `com.brandb.provider`…
+- 共享实现类(如 `SharedMainActivity`)只作为父类存在,不出现在任何 Manifest 里;
+  ContentProvider 的 authorities 也按 `${applicationId}.provider` 各自不同。
+
+于是"不能混淆的那部分"(清单声明 + 对应的 DEX 类名 + authorities)在每个变体**天然不同**,
+同源指纹面显著缩小。注意这是**真实架构差异**——占位注册本来就是多渠道/多品牌的正规工程做法,
+Manifest 仍然如实声明全部入口,不是对检测的伪装。附带收益:共享实现类不再被组件 keep
+规则钉住,R8 可按变体正常优化,各变体产物代码布局随常规混淆自然不同。
+
+路由侧同理:每变体 RouterTable 引用的是自己的 stub Class 而非共享类名,跳转链路
+(`Router.instance.execute(uri)`)也只落 URI 与变体类,不暴露共享实现类名。
+
+### 4. 工程差异(正当发布实践的结果)
 
 以下都是正常发布工程实践,**不是**为了对抗检测而做:
 
