@@ -79,6 +79,12 @@ Manifest 仍然如实声明全部入口,不是对检测的伪装。附带收益:
 路由侧同理:每变体 RouterTable 引用的是自己的 stub Class 而非共享类名,跳转链路
 (`Router.instance.execute(uri)`)也只落 URI 与变体类,不暴露共享实现类名。
 
+**与 `<activity-alias>` 的区别**:alias 的 `targetActivity` 必须同时声明在 Manifest 里并被
+组件 keep 钉住——真实实现类 FQCN 在各变体一字不差,最强的指纹锚点原样保留;且 alias 仅覆盖
+Activity,Service/Receiver/Provider/authorities 无能为力。alias 的真正用途是运行时入口管理
+(`setComponentEnabledSetting` 动态切换桌面图标/入口),不是变体注册面差异化。占位生成方案中
+共享实现类不进任何 Manifest,注册面全量落在各变体 applicationId 包下,两者不可互相替代。
+
 ### 4. 工程差异(正当发布实践的结果)
 
 以下都是正常发布工程实践,**不是**为了对抗检测而做:
