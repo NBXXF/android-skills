@@ -28,9 +28,12 @@
 - android-classes-jar、artifact view、变体感知、Variant Sources API
 - 升级迁移、索引版本、版本不兼容、同版本三件套
 
-## 三、组件注解与空壳生成
+## 三、组件注解与生成模式
 
 - VariantComponentStub、@VariantComponentStub、VCS
+- mode 参数、VariantComponentStubMode、EXTENDS、COPY、生成模式
+- 实现拷贝、复制组件、final 组件、不继承原类、保留构造
+- COPY 文件唯一、源码索引常量超限、换包后资源 import、拷贝类类型转换
 - variant-component-stub、com.xxf.variant-component-stub
 - 空壳类、壳类、stub、生成子类、继承生成、派生入口
 - 占位组件、占位类、占位 Activity、占位 Service
