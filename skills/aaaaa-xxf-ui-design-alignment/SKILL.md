@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-ui-design-alignment
-description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配、动态内容适配、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
+description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -68,15 +68,17 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 
 ## 多机型适配
 
+- 窗口尺寸断点、canonical layouts、导航容器选型、折叠屏铰链、edge-to-edge 强制行为和 manifest 大屏配置，按 `references/compose-adaptive-window-standards.md` 的官方口径执行。
 - 优先使用 `Modifier.fillMaxWidth`、`weight`、`widthIn/heightIn`、`requiredSize`、`aspectRatio`、`BoxWithConstraints`、adaptive grid、window size class 和 `WindowInsets` 表达布局关系。
-- 小屏至少检查 320dp/360dp 宽；主流机型检查 390dp/411dp 宽；有横屏、平板、折叠屏入口时检查更宽断点。
+- 小屏至少检查 320dp/360dp 宽；主流机型检查 390dp/411dp 宽；有横屏、平板、折叠屏入口时按官方测试窗口基准检查更宽断点。
 - 页面容器要处理系统 inset：状态栏、导航栏、沉浸式、刘海、水滴屏、手势导航、软键盘；Compose 中优先用 `Modifier.windowInsetsPadding`、`statusBarsPadding`、`navigationBarsPadding`、`imePadding` 或项目既有 inset 封装。
-- 字号用 `sp`，但紧凑控件要验证 font scale 1.15/1.3；重要按钮、`TextField` 和输入框不能因为字体放大而文字被裁。
+- 字号用 `sp`，但紧凑控件要验证 font scale 1.15/1.3；触及通用组件或有无障碍要求时按官方口径加测 200% 最大字号（Android 14+ 系统上限）；重要按钮、`TextField` 和输入框不能因为字体放大而文字被裁。
 - 图片区域用明确比例或约束，不用只在一个设备上看起来刚好的固定高度；头像、封面、banner、瀑布流图片要明确 `ContentScale` 和裁剪策略。
 - 深色模式、多语言、RTL 不是默认必做，但改动触及通用组件或公开库时要确认是否已有要求。
 
 ## 需要按需读取的 references
 
+- 做窗口尺寸断点分支、平板/横屏/折叠屏/多窗口布局、导航容器选型（Bar/Rail/Drawer）、canonical layouts、edge-to-edge、大屏 manifest 决策或多窗口验证矩阵时，读取 `references/compose-adaptive-window-standards.md`。
 - 做 Compose 页面、复杂列表、弹窗、横屏/平板/折叠屏、多窗口、键盘、RTL、深色模式或无障碍适配，以及组件横/纵排布尺寸、相对定位叠层、文字超长、图片缩放等适配决策时，读取 `references/compose-adaptation-scenarios.md`。
 - 实现文本、图片、按钮、标签、输入框、卡片、Lazy item 等会受内容影响的组件时，读取 `references/compose-dynamic-layout-decisions.md`。
 
@@ -104,7 +106,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 1. 先复用项目已有 Compose 组件、theme、typography、spacing token、颜色和图片加载封装。
 2. 再新增局部 composable、modifier 或资源，命名跟随邻近模块。
 3. 最后才新增自定义 Layout、`SubcomposeLayout` 或复杂测量逻辑；新增时必须考虑测量次数、重组成本、主线程开销和生命周期。
-4. 优先用 `Row`、`Column`、`Box`、`Lazy*`、`FlowRow`、`ConstraintLayout` 和 modifier 表达静态结构；运行时只计算真正依赖 constraints、数据或 inset 的值。
+4. 优先用 `Row`、`Column`、`Box`、`Lazy*`、`FlowRow`（Compose ≥ 1.11 可经用户同意换 `FlexBox`）、`ConstraintLayout` 和 modifier 表达静态结构；运行时只计算真正依赖 constraints、数据或 inset 的值。
 5. 复杂页面先对齐布局骨架，再补资源、动效和状态，不要一开始堆 magic number。
 
 ## 复核清单
@@ -120,6 +122,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 文本组件是否明确单行/多行/截断/换行/动态高度策略，外层容器是否能承接宽高变化。
 - 图片组件是否明确比例、占位、失败态、裁剪和远程图片极端尺寸策略。
 - 横屏、分屏、多窗口、平板、折叠屏或更宽窗口下是否有合理布局，不依赖设备型号硬判断。
+- 旋转、折叠开合、窗口 resize 后滚动位置、输入内容、选中态、播放进度是否保留；是否未用 configChanges/screenOrientation 掩盖状态丢失（状态保持细则见 `references/compose-adaptive-window-standards.md`）。
 - 本地化、RTL、资源限定符、深色模式和默认资源兜底是否在触及范围内处理或说明不适用。
 - 交互态、禁用态、选中态、弹窗/浮层、键盘弹起、返回恢复后是否保持布局稳定。
 - 列表 0/1/多条、长文案、缺图、加载失败、分页态是否可用。

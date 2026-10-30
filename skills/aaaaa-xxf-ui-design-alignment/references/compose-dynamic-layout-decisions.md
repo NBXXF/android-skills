@@ -19,6 +19,7 @@
 - 需要视觉最小尺寸时用 `defaultMinSize`、`heightIn`、`widthIn`；需要强制尺寸时才用 `requiredSize`。
 - 页面级容器要区分内容 padding、系统 inset padding、列表 contentPadding 和视觉背景 padding，避免重复叠加。
 - 宽屏下如果内容不应无限拉伸，用 `widthIn(max = ...)` 或项目的 max content width 居中承接。
+- 可复用组件必须暴露 `modifier: Modifier = Modifier` 参数并应用到根布局（caller modifier 在链首，intrinsic 修饰如 `clip` 在后）；`fillMaxWidth`、屏幕级 padding、对齐与放置归调用方，语义固定尺寸（如头像 48dp）归组件——组件锁死放置与尺寸是适配死角。条件分支产生不同根时，modifier 应用到每个分支的根，不要为传 modifier 合并出一个 wrapper。
 
 ## Row 横向组合
 
@@ -84,3 +85,14 @@
 - `ConstraintLayout`：复杂相对定位、baseline 对齐、多元素互相约束时使用；简单 Row/Column 能表达时不要引入。
 - `SubcomposeLayout`：确实需要先测量一部分内容再决定另一部分布局时使用；注意性能，尤其不要滥用于 Lazy item。
 - `onSizeChanged`/`onGloballyPositioned`：只用于确实需要上报尺寸、动画或锚点定位的场景；不要把它作为常规布局计算入口。
+- `FlexBox`（Compose ≥ 1.11，实验性）：一维排列需要换行、按比例伸缩（`grow`/`shrink`）时替代 `FlowRow`/`FlowColumn`；实验性 API 须先征得用户同意，降级用 `FlowRow` + `weight`。
+- `Grid`（Compose ≥ 1.11，实验性）：屏内区域/卡片矩阵等结构性二维布局整体替换 `Column` 嵌套；大数据集仍用 `Lazy*Grid`；坐标与用法见 `compose-adaptive-window-standards.md` 布局原语选型节。
+- `mediaQuery`（Compose ≥ 1.11，实验性）：按窗口尺寸/姿态/指针精度/观看距离切布局或控件尺寸，见 standards 文件同节；降级用 WSC 分支。
+
+## 布局切换动画与身份
+
+- 子内容尺寸变化用 `Modifier.animateContentSize()`；单双栏/内容形态互换用 `AnimatedContent`（简单淡切可 `Crossfade`）。
+- `AnimatedContent` 的 `contentKey` 默认以 target 为身份；仅当视觉身份 ≠ 数据相等性时自定义（用稳定 item id）。禁止把不同 item 折叠到共享 key——切换动画丢身份、焦点错乱的典型根因。
+- content lambda 内必须从 lambda 的 target 渲染，不要捕获外部状态变量（outgoing/incoming 会共享同一身份）。
+- 布局切换会改变焦点图：初始/恢复焦点只能从 `LaunchedEffect`（按条件 key）发起，禁止在 composable body 里 `requestFocus()`；requester 按稳定 item id 持有；刷新后按语义 id 恢复焦点或走确定性 fallback。
+- `focusProperties` 只编码确实错误的焦点边（edge/jump/trap），不要硬编码整张焦点图（布局变化后即过期）。

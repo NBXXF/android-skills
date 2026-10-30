@@ -62,6 +62,7 @@
 
 ## 窗口和设备形态
 
+- 官方断点数值、window size class 获取 API、canonical layouts、折叠屏铰链与多窗口验证矩阵见 `compose-adaptive-window-standards.md`；本节只列场景风险。
 - 窗口尺寸：手机小屏、常规屏、大屏、横屏、平板、ChromeOS、外接显示器、分屏、多窗口、自由窗口都会改变可用宽高；布局分支优先基于实际 constraints、window size class 或项目封装，不基于设备型号。
 - 折叠屏：折痕、铰链、半折叠姿态、双屏区域和展开/折叠切换会改变内容连续性；关键按钮、输入框、弹窗、底部栏不能跨不可用区域或被折痕切开。
 - 方向切换：横竖屏切换后要验证 `rememberSaveable` 状态、Lazy 滚动位置、分页状态、输入焦点、弹窗和底部栏位置。
@@ -70,6 +71,7 @@
 
 ## WindowInsets 和系统区域
 
+- target 35+ edge-to-edge 强制行为、失效 API 清单与 `enableEdgeToEdge()` 标准用法见 `compose-adaptive-window-standards.md`。
 - edge-to-edge：状态栏、导航栏、手势区域、刘海/挖孔、透明系统栏要用 `WindowInsets` 明确处理；可点击元素必须避开系统栏和手势热区。
 - Compose API：优先用项目既有 inset 封装；没有封装时再使用 `Modifier.windowInsetsPadding`、`statusBarsPadding`、`navigationBarsPadding`、`imePadding`、`safeDrawingPadding` 等。
 - 底部固定元素：吸底按钮、底部操作栏、FAB、Snackbar、BottomSheet 要同时处理导航栏、手势区域和键盘。
