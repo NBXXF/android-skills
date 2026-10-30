@@ -107,7 +107,7 @@
 - 长寿命 `LaunchedEffect` 消费外部回调必须 `rememberUpdatedState` 包装，否则协程持有旧引用。
 - 禁止：非挂起操作写进 `LaunchedEffect`（日志/同步赋值）；空 `onDispose {}` 的 `DisposableEffect` 当占位；动画/滚动中高频换 key 重启 effect（协程取消有成本）。
 - 多个 `LaunchedEffect(Unit)` 合并为一个 + 嵌套 `launch`，减少 effect 节点与协程启动；可选回调先 `if (callback != null)` 守卫再启动。
-- Flow 收集：外部流（VM/仓库/传感器）一律 `collectAsStateWithLifecycle()`（默认 STARTED；焦点专属控件 RESUMED；禁 CREATED）；内存内轻量 StateFlow 可 `collectAsState`（lifecycle 版订阅/分发开销约为其 3-4 倍，纯内存流不值得）。高频流（>~10ms/次）加 `.conflate().distinctUntilChanged()` 且操作链包 `remember(key)`。
+- Flow 收集：外部流（VM/仓库/传感器）一律 `collectAsStateWithLifecycle()`（默认 STARTED；焦点专属控件 RESUMED；禁 CREATED）；内存内轻量 StateFlow 可 `collectAsState`（lifecycle 版订阅/分发开销约为其 3-4 倍，纯内存流不值得）。高频流（发射间隔短于约 100ms）加 `.conflate().distinctUntilChanged()` 且操作链包 `remember(key)`。
 - 派生状态决策（1.13+）：简单条件/过滤（`scrollState.value > 0`）用 `computedStateOf`（失效路径显著更快；注意该取舍口径出自官方 agents/skills 参考，人类 best-practices 页暂只讲 `derivedStateOf`）；重计算多次读取用 `derivedStateOf`；平凡取反/属性查值用普通 `get()`。`derivedStateOf` 必须 `remember {}` 包裹，捕获的非 state 值全部做 key，**禁止**把 `state.value` 传成 key（等于每次变更重建、彻底废掉过滤）；输入频率 ≈ 输出频率时两者都不用。同步派生禁 `produceState + snapshotFlow`（白付协程与 flow 派发）；fire-and-forget 副作用（埋点/日志）用 `LaunchedEffect { snapshotFlow {}.distinctUntilChanged().collect {} }`。
 - 整表替换场景用 `mutableStateOf(mutableListOf(), neverEqualPolicy())` + 载荷赋值（`state.value = list`），比 `mutableStateListOf` 逐元素跟踪便宜。
 - 一次手势/事件内的多次状态写包进 `Snapshot.withMutableSnapshot { }`：合并为一次失效、一次重组，并防 torn reads；后台线程裸写 `MutableState` 由快照隔离保证安全。
@@ -156,7 +156,7 @@ private class CircleNode(var color: Color) : DrawModifierNode, Modifier.Node() {
 
 ## 门禁执行口径（AI 审计）
 
-1. 按上述十类**逐类过完**再下结论，不要首个命中即停；每条发现必须落到"症状 → 证据（编译器报告行/trace/计数）→ 最小修复 → 验证方式"，报告要能点名 composable 与变化参数（"它重组很多"不是发现）。
+1. 按上述各节**逐类过完**再下结论，不要首个命中即停；每条发现必须落到"症状 → 证据（编译器报告行/trace/计数）→ 最小修复 → 验证方式"，报告要能点名 composable 与变化参数（"它重组很多"不是发现）。
 2. 修复建议一次一个轴、可 bisect；无法测量时区分"已证实路径"与"未测量成本"，给条件性建议，不凭感觉开方。
 3. Pass/Warn/Block 建议：触及 Lazy item 不稳定参数、回写死循环风险、Lazy item 内子组合/埋点 effect → Block 候选；非热点一次性屏幕的小问题 → Warn；纯重构无运行时差异 → Pass 并注明未测量项。
 4. 修复后闭环：同场景重测（重组计数趋平、帧指标改善）+ `:stabilityCheck` 不红 + 基线 profile 再生成入库；无法闭环时在结论中列为残余风险。
