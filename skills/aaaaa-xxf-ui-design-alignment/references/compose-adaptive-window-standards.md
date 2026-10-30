@@ -155,8 +155,9 @@ ListDetailPaneScaffold(
 
 - 改"显示什么"（换布局结构、换内容形态）才用 WSC（app 层）或 `BoxWithConstraints`（组件层）；改"在哪/怎么显示"（尺寸、padding、列数、对齐）用 modifier 与自适应容器表达，不引入 `BoxWithConstraints`。它会把 composition 推迟到 layout 阶段（官方明示成本）；组件内部小阈值分支参考官方口径 `maxWidth < 400.dp` 量级。
 
-### Grid（Compose ≥ 1.11，实验性）
+### Grid（1.11 引入实验，1.13 起 stable）
 
+- 版本分代：Compose 1.11–1.12 为实验性（需 `@OptIn(ExperimentalGridApi::class)` 且征得用户同意）；**1.13 起转 stable**，按项目实际依赖版本选择口径。
 - 非懒加载；用于屏内区域/卡片矩阵等**结构性**二维布局，不要拿来展示大数据集，也不要嵌在原 `Column` 里，直接整体替换。
 - 轨道在 `config` lambda 里定义（可读 `constraints`）：`column(160.dp)` 固定、`column(0.5f)` 百分比、`row(1.fr)` 份额、`GridTrackSize.Auto` / `MinMax(100.dp, 1.fr)` / `MinContent` / `MaxContent`；`repeat(n) { ... }`、`gap(8.dp)`。
 - item 用 `Modifier.gridItem(row = , column = , rowSpan = , columnSpan = , alignment = )`；支持负数从末尾计数；声明顺序即 z 序（后声明渲染在上）。
@@ -171,14 +172,14 @@ Grid(config = {
 }) { /* items */ }
 ```
 
-- 需 `@OptIn(ExperimentalGridApi::class)`；**实验性 API，使用前必须征得用户同意**；降级路径：非懒二维布局用 `Row`/`Column` 组合 + WSC 分支。
+- 1.11–1.12 需 `@OptIn(ExperimentalGridApi::class)` 且征得用户同意；降级路径：非懒二维布局用 `Row`/`Column` 组合 + WSC 分支。
 
-### FlexBox（Compose ≥ 1.11，实验性）
+### FlexBox（1.11 引入实验，1.13 起 stable）
 
 - CSS flexbox 语义，一维排列中需要换行、伸缩、按比例分配空间时使用；官方口径：需要 wrap 的场景用 `FlexBox` 替代 `FlowRow`/`FlowColumn`；不支持懒加载；整体屏幕骨架优先 `Grid`。
 - 容器：`FlexBox(config = { direction(FlexDirection.Row); wrap(FlexWrap.Wrap); justifyContent(FlexJustifyContent.Center); alignItems(FlexAlignItems.Center); gap(16.dp) })`。
 - item：`Modifier.flex { basis(FlexBasis.Auto /* 或 dp / 0.7f */); grow(1f); shrink(0.5f); alignSelf(...); order(...) }`——`grow`/`shrink` 是 weight 的声明式替代，压缩顺序在此显式表达。
-- 实验性 API 同样先征得用户同意；降级路径：`FlowRow`/`FlowColumn` + `weight`。
+- 1.11–1.12 为实验性需征得用户同意，1.13 起 stable；降级路径：`FlowRow`/`FlowColumn` + `weight`。
 
 ### mediaQuery 设备能力查询（Compose ≥ 1.11，实验性）
 
