@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-android-variant-component-stub
-description: Android 变体/马甲包共享组件与路由助手。用于“马甲包组件”“变体组件”“占位组件”“applicationId 占位”“Manifest 占坑”“马甲包路由”“多渠道共用组件”“白标/品牌包”“渠道包”“flavor/suffix 变体”“VariantComponentStub 接入/教程”“马甲包上架误判/触发词治理”等场景；引导读取 `references/variant-component-stub.md`、`references/store-compliance-differentiation.md` 和 `trigger.md`，按 EXTENDS/COPY 模式选择、公共库标注、宿主占位注册、路由常量清单、Application 批量注册、URI 跳转、排错与合规差异化给出分步方案。
+description: Android 变体/马甲包共享组件与路由助手。用于“马甲包组件”“变体组件”“占位组件”“applicationId 占位”“Manifest 占坑”“马甲包路由”“多渠道共用组件”“白标/品牌包”“渠道包”“flavor/suffix 变体”“VariantComponentStub 接入/教程”“原始类不进包/构建期剔除”“马甲包上架误判/触发词治理”等场景；引导读取 `references/variant-component-stub.md`、`references/store-compliance-differentiation.md` 和 `trigger.md`，按 EXTENDS/COPY/COPY_EXCLUDE_HOST 模式选择、公共库标注、宿主占位注册、路由常量清单、Application 批量注册、URI 跳转、排错与合规差异化给出分步方案。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -14,7 +14,8 @@ description: Android 变体/马甲包共享组件与路由助手。用于“马�
 - `@VariantComponentStub` 注解接入(公共库与 app 源码组件)
 - 路由常量清单(`const val` 集中声明)与注解引用
 - Manifest `${applicationId}.Xxx` 占位注册(占坑)
-- `mode = VariantComponentStubMode.EXTENDS`（默认）空壳继承与 `COPY` 实现拷贝
+- `mode = VariantComponentStubMode.EXTENDS`（默认）空壳继承、`COPY` 实现拷贝与
+  `COPY_EXCLUDE_HOST` 拷贝并构建期剔除原始类(fail-closed 校验残留引用)
 - Gradle 插件 `com.xxf.variant-component-stub` 按变体生成组件类
 - flavor / `applicationIdSuffix` 马甲包矩阵
 - 宿主自定义 Application 直引生成 RouterTable 批量注册 di-android 路由
@@ -44,9 +45,12 @@ description: Android 变体/马甲包共享组件与路由助手。用于“马�
 - 涉及 final 组件、复制实现、无继承需求或 mode 参数时，读取参考文档的“mode 参数与模式选择”和“COPY 模式”。
 - COPY 示例单独放文件，补齐枚举 import 和路由常量定义；不把多个被标注组件塞进同一个 COPY 文件。
 - COPY 不保证可转换为原类，也不自动补无参构造、注入依赖或改写外部 Intent；正文同包引用需显式 import，库 API/依赖须对宿主可见。
+- 涉及“原始类不允许进最终包”“keep 规则裁不掉原类”“COPY_EXCLUDE_HOST 构建报错”时，读参考文档的
+  “COPY_EXCLUDE_HOST 模式”，按 fail-closed 报错给修复：删引用或改走 URI 路由、Manifest 改注册
+  `${applicationId}.Xxx`、确需直用原始类退回 COPY；字符串反射边界提示用 debug 包运行时验证。
 - 按当前首次接入场景给用法，不主动展开索引格式版本或升级迁移。
 - 组件报错先确认 mode，再按参考文档的模式对比、COPY 使用边界与公共名称约束排查。
-- 验证两种生成链路：library 产物由宿主 generate 消费，app 源码由 KSP 生成；构建实际变体并检查 Manifest、路由 Class 和 release/R8。
+- 验证两种生成链路：library 产物由宿主 generate 消费，app 源码由 KSP 生成；构建实际变体并检查 Manifest、路由 Class 和 release/R8；启用 COPY_EXCLUDE_HOST 的变体再解包 dex 确认原始类与索引类 0 处。
 - 上架/触发词类问题只给**合规差异化与关键词治理**方案(flavor 资源、按 flavor 模块组合、
   构建期敏感词扫描、文案改写、申诉路径);不提供审核期隐藏、过审后切换、触发词加密躲机审、
   换皮重复上架、多账号对抗关联等规避审核的做法,并说明其政策风险。

@@ -1,7 +1,8 @@
 # VariantComponentStub 变体/马甲包组件与路由接入参考
 
 按 Android app 变体最终 `applicationId`(含 flavor 覆盖与 `applicationIdSuffix`)生成组件的变体
-Kotlin 类（默认 EXTENDS 空壳继承，可选 COPY 实现拷贝），供 Manifest 的 `${applicationId}.Xxx` 占位注册使用；同时按变体生成
+Kotlin 类（默认 EXTENDS 空壳继承，可选 COPY 实现拷贝或 COPY_EXCLUDE_HOST 拷贝并构建期剔除原始类），
+供 Manifest 的 `${applicationId}.Xxx` 占位注册使用；同时按变体生成
 `uri → stub Class` 路由表，让共享业务代码以稳定 URI 访问组件，不感知马甲包差异。
 
 架构收益:每个变体实际注册进 Manifest 的四大组件都在自己的 applicationId 包下,共享实现类
@@ -207,7 +208,7 @@ public object RouterTable {
 
 ## mode 参数与模式选择
 
-`mode` 是每个组件的注解参数，不是 Gradle 全局开关。同一个公共库或 app 可以混用两种模式；
+`mode` 是每个组件的注解参数，不是 Gradle 全局开关。同一个公共库或 app 可以混用三种模式；
 未填写时使用 `VariantComponentStubMode.EXTENDS`。
 
 ```kotlin
@@ -221,22 +222,24 @@ annotation class VariantComponentStub(
 | 参数 | 默认值 | 含义 |
 |---|---|---|
 | `uri` | 必填 | 全 app 唯一、非空且无空白的稳定路由键；推荐引用公共 `const val` |
-| `name` | `""` | 生成类的简单名；空白时沿用源类名，两种模式均生效 |
-| `mode` | `EXTENDS` | `VariantComponentStubMode` 枚举，选择空壳继承或实现拷贝 |
+| `name` | `""` | 生成类的简单名；空白时沿用源类名，各模式均生效 |
+| `mode` | `EXTENDS` | `VariantComponentStubMode` 枚举，选择空壳继承、实现拷贝或拷贝+剔除原始类 |
 
-| 比较项 | `EXTENDS`（默认） | `COPY` |
-|---|---|---|
-| 生成结果 | `class Variant : Host()` | `class Variant : 原来的父类()`，包含拷贝的实现 |
-| 与源类关系 | 生成类是源类的子类 | 生成类与源类没有直接继承关系；原类保留 |
-| 适用情况 | 组件可继承，希望共享原类实现 | final 组件，或明确需要独立的变体实现类 |
-| 源类要求 | 可继承，不能有未实现的抽象成员 | 可以 final，但不能 abstract/sealed |
-| 构造校验 | 必须能通过 `Parent()` 调用可访问构造器 | 构造原样拷贝，不执行 EXTENDS 的无参构造校验 |
-| 源文件约束 | 可以在同文件标注多个组件 | 文件内只能有一个被标注组件 |
-| 公共库消费 | 宿主能访问源类及公开父类依赖 | 宿主能编译拷贝文件用到的全部类型和 API |
+| 比较项 | `EXTENDS`（默认） | `COPY` | `COPY_EXCLUDE_HOST` |
+|---|---|---|---|
+| 生成结果 | `class Variant : Host()` | `class Variant : 原来的父类()`，包含拷贝的实现 | 同 COPY |
+| 与源类关系 | 生成类是源类的子类 | 生成类与源类没有直接继承关系；原类保留 | 同 COPY；且原始类不进 APK |
+| 适用情况 | 组件可继承，希望共享原类实现 | final 组件，或明确需要独立的变体实现类 | 马甲包组件：原始类不允许出现在最终包 |
+| 原始类是否进 APK | 是（变体父类，必须保留） | 由 R8 可达性决定（keep 规则可使其复活） | **确定性剔除**，keep 规则无法复活 |
+| 源类要求 | 可继承，不能有未实现的抽象成员 | 可以 final，但不能 abstract/sealed | 同 COPY |
+| 构造校验 | 必须能通过 `Parent()` 调用可访问构造器 | 构造原样拷贝，不执行 EXTENDS 的无参构造校验 | 同 COPY |
+| 源文件约束 | 可以在同文件标注多个组件 | 文件内只能有一个被标注组件 | 同 COPY |
+| 残留引用约束 | 无 | 无（有引用时 R8 会保留原类） | **构建失败**并点名引用方 |
+| 公共库消费 | 宿主能访问源类及公开父类依赖 | 宿主能编译拷贝文件用到的全部类型和 API | 同 COPY；宿主代码不得二进制引用原始类 |
 
-两种模式都要求 public 顶层 class、非 sealed、无未绑定类型参数；`name` 和 `uri` 的查重规则一致。
+三种模式都要求 public 顶层 class、非 sealed、无未绑定类型参数；`name` 和 `uri` 的查重规则一致。
 库中的 EXTENDS 构造器允许 public/protected，app 同模块额外允许 internal；全部参数有默认值也视为可无参调用。
-COPY 不会自动生成构造参数或注入依赖，Manifest 组件仍须满足实际 Android 创建机制的要求。
+COPY 族（COPY / COPY_EXCLUDE_HOST）不会自动生成构造参数或注入依赖，Manifest 组件仍须满足实际 Android 创建机制的要求。
 
 ## COPY 模式
 
@@ -320,6 +323,7 @@ COPY 生成类不能转换为 `SharedCopyActivity`；需要统一类型时使用
 | Java 与多轮 KSP | 默认面向首轮可见的 Kotlin 源码，不承诺 Java 源码拷贝或后续轮次生成组件支持 |
 
 COPY 会同时保留原始实现和生成实现；未使用的原类是否被裁剪由 R8 可达性决定。
+需要原始类确定性不进 APK 时改用 COPY_EXCLUDE_HOST(见下节)。
 本插件不自动迁移已有的反射/JNI/序列化规则；若业务按名称访问组件或成员，应核对变体类对应规则。
 普通 Manifest 入口和生成路由表 Class 引用沿用已有 AGP/aapt 与 R8 规则，无需仅因选择 COPY 增加全局 keep。
 
@@ -331,6 +335,49 @@ COPY 会同时保留原始实现和生成实现；未使用的原类是否被裁
 3. 检查 `RouterTable.routes` 指向生成类，Manifest 合并结果注册相同入口。
 4. 构建启用 minify 的 release 变体，再运行组件入口和 URI 跳转；编译成功不能替代设备运行验证。
 
+## COPY_EXCLUDE_HOST 模式
+
+在 COPY 的整体拷贝语义之上，把"原始类不进 APK"从 R8 的隐式行为升级为**构建期强制契约**。
+纯注解零配置：宿主只要接入了本插件，标注即生效，无需任何 Gradle 配置。
+
+```kotlin
+@VariantComponentStub(
+    uri = SharedRoutes.excludeActivity,
+    name = "ExcludeActivity",
+    mode = VariantComponentStubMode.COPY_EXCLUDE_HOST,
+)
+class SharedExcludeActivity : Activity() // final 可用
+```
+
+### 机制
+
+1. **生成**：与 COPY 完全一致（整文件拷贝、改名、R/BuildConfig import 补齐），校验规则复用。
+2. **剔除**：插件在类进入 dex/R8 之前，经 AGP 公开的 `ScopedArtifact.CLASSES` 扩展点把
+   原始类（含内部类 `Host$*`）从全量 classpath 中过滤掉——不依赖 minify/R8，
+   `-keep class ** extends Activity`、`-keep class com.xxx.shared.**` 之类的宽规则**无法让原始类复活**。
+3. **索引类一并剔除**：`VariantComponentStubIndex_*` 只在构建期被插件消费，运行时无人引用，
+   且类名固定、携带组件源码 Base64，留在包里既是体积浪费也是马甲指纹。该剔除随流水线
+   **无条件执行**（未使用本模式的工程也会剔掉索引类）。
+4. **fail-closed**：剔除前做两项校验，命中即构建失败（而不是留一个运行时 `NoClassDefFoundError`）：
+   - 保留类的常量池不得二进制引用任何被剔除原始类（显式 Intent、`::class`、方法/字段签名、
+     注解、泛型 Signature 全覆盖）——报错会点名引用方类名与修复指引；
+   - 合并 Manifest 不得注册原始类——提示改注册 `${applicationId}.Xxx` 变体类。
+
+### 边界与代价
+
+| 条目 | 说明 |
+|---|---|
+| 字符串反射 | `Class.forName("<原始类全名>")` / JNI 按名访问无法静态检测；请通过 debug 包运行时测试规避 |
+| 剔除范围 | 被标注原始类及其内部类；同文件顶层辅助声明、`XxxKt` 门面不剔（release 由 R8 兜底） |
+| app 单测 | 剔除只作用于 APK 打包链路，单测编译/运行 classpath 不受影响，仍可引用原始类 |
+| 构建成本 | 流水线随插件启用常开：每次构建全量 classpath 重打包一次（jacoco 插桩同量级），任务可缓存 |
+| 版本要求 | 三件套同版本；旧插件读含本模式的索引会明确报错——按同版本整体升级 |
+
+### 验证
+
+除 COPY 的验证步骤外，解包 debug/release APK 的 dex：原始类与 `VariantComponentStubIndex_*`
+应为 0 处、变体类在包；共享库内对该组件只能走 URI 跳转，任何直接类引用都会触发 fail-closed 构建失败。
+
 ## 公共名称约束
 
 - `name` 必须是合法简单类名，不能使用 `R`/`BuildConfig`；模块内、跨库和 app 与库间的冲突都会报错。
@@ -341,7 +388,8 @@ COPY 会同时保留原始实现和生成实现；未使用的原类是否被裁
 
 - Manifest 引用的 stub 使用 AGP/aapt 组件 keep 规则,插件不额外生成 consumer rules。
 - 路由表与 Application 直引 stub Class,R8 可静态跟踪,**无需新增 keep 规则**。
-- 父类名称不承诺不变;索引类编译进库产物,未开压缩的 APK 可能携带。
+- 父类名称不承诺不变;索引类编译进库产物,但 APK 打包链路无条件剔除(库 AAR 本身仍携带)。
+- 普通 COPY 的原始类去留由 R8 可达性决定;COPY_EXCLUDE_HOST 的原始类构建期确定性剔除,keep 规则不参与。
 - 预混淆 AAR 若丢失索引类名、注解或父类名称,将无法消费。
 - 目前只处理 KSP 首轮可见源码类;unitTest KSP 任务按库模式运行。
 
@@ -360,6 +408,9 @@ COPY 会同时保留原始实现和生成实现；未使用的原类是否被裁
 | COPY 正文找不到类型/资源/成员 | 检查 import、实际 namespace、跨模块可见性及宿主编译依赖 |
 | COPY 索引常量超限 | 精简源文件、拆分辅助实现或使用 EXTENDS |
 | COPY 转换为源类失败 | 使用共同父类/公开接口，或选 EXTENDS |
+| COPY_EXCLUDE_HOST 构建报"仍二进制引用被剔除的原始类" | 删除该引用或改走 URI 路由(`RouterTable.routes` / `Router.instance`);确需直接使用原始类时改回 COPY |
+| COPY_EXCLUDE_HOST 构建报"Manifest 引用了即将被剔除的原始类" | Manifest 改注册 `${applicationId}.Xxx` 变体类 |
+| 需要原始类留在包里 | 该组件不要用 COPY_EXCLUDE_HOST(普通 COPY 的原类去留交给 R8) |
 
 ## 验证命令
 
@@ -369,6 +420,8 @@ COPY 会同时保留原始实现和生成实现；未使用的原类是否被裁
 #   build/generated/variant-component-stub/<variant>/kotlin/     库组件 stub
 #   build/generated/ksp/<variant>/kotlin/                         app 组件 stub + RouterTable
 #   build/intermediates/variant-component-stub/<variant>/index.txt  scan 汇总索引
+#   build/generated/ksp/<variant>/resources/VariantComponentStubExcludeHosts.txt  app 侧剔除清单
+#   build/intermediates/classes/<variant>/ALL/exclude<Variant>VariantHostClasses/classes.jar  剔除后 classes
 ```
 
 运行 APK:Manifest 入口启动 → 变体 stub 承接 → URI 跳转落地页显示变体类名。

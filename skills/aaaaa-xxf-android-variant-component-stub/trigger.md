@@ -31,9 +31,13 @@
 ## 三、组件注解与生成模式
 
 - VariantComponentStub、@VariantComponentStub、VCS
-- mode 参数、VariantComponentStubMode、EXTENDS、COPY、生成模式
+- mode 参数、VariantComponentStubMode、EXTENDS、COPY、COPY_EXCLUDE_HOST、生成模式
 - 实现拷贝、复制组件、final 组件、不继承原类、保留构造
 - COPY 文件唯一、源码索引常量超限、换包后资源 import、拷贝类类型转换
+- 剔除原始类、剔除 host 类、原始类不进 APK、原始类不进包、确定性剔除
+- 构建期剔除、classes 剔除、keep 无法复活、keep 后原类仍在、原类复活
+- 常量池扫描、二进制引用原始类、显式 Intent 引原始类、::class 引原始类
+- 索引类剔除、VariantComponentStubIndex、组件索引类不进包、马甲指纹
 - variant-component-stub、com.xxf.variant-component-stub
 - 空壳类、壳类、stub、生成子类、继承生成、派生入口
 - 占位组件、占位类、占位 Activity、占位 Service
@@ -81,6 +85,8 @@
 - unitTest 行为、测试源集
 - Manifest 占位不生效、生成的类 Manifest 找不到
 - R8 后路由失效、release 混淆后跳转失败
+- 剔除校验失败、仍二进制引用被剔除的原始类、NoClassDefFoundError 构建失败
+- Manifest 引用了即将被剔除的原始类
 
 ## 七、典型任务场景
 
@@ -94,6 +100,7 @@
 - 马甲包路由怎么统一、跳转怎么写不感知渠道
 - debug 包带后缀时占位类怎么生成
 - 库发 AAR 后宿主怎么消费组件索引
+- 原始类不允许出现在最终包怎么做(COPY_EXCLUDE_HOST)
 - 三件套怎么升级、旧索引库怎么办
 - 上架被误判重复内容/克隆怎么办(转 store-compliance-differentiation.md)
 - 触发词/敏感词误伤怎么治理(转 store-compliance-differentiation.md)
