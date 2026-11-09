@@ -1,0 +1,4 @@
+interface:
+  display_name: "代码精炼与可读性门禁"
+  short_description: "约束 Kotlin 代码精炼、逻辑清晰、易读、职责清晰与上手快：when/枚举/value class 建模、空安全、API 设计、Miller 认知阈值、职责与结构、坏味道审查目录"
+  default_prompt: "使用 $aaaaa-xxf-code-conciseness 约束 Kotlin 代码质量：有限取值优先枚举/sealed/value class 而非字符串比对，同变量多分支优先 when 表达式；空安全用类型系统，禁 !! 与嵌套 let；API 禁 boolean 陷阱与超长参数；认知负担守 Miller 阈值、平铺优于嵌套、一概念一名；结构守一句话职责测试、深模块、按知识分组、状态唯一属主、一致性优先与统一布局；可读性深入读 references/readability-cognition.md，结构与职责深入读 references/structure-responsibility.md；禁防御冗余、提前抽象与死代码；审查既有代码按 references/code-smell-catalog.md 六族过检，改写对照 references/kotlin-idioms.md，交付前过自检清单。"

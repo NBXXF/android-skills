@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android 卡死/堵死风险门禁"
+  short_description: "队列堵死、退避重试、锁死、流程卡死的高风险防护门禁"
+  default_prompt: "使用 $aaaaa-xxf-android-stuck-risk-gate 为队列/待上报/串行消费/退避重试/锁/轮询等推进链路做卡死风险审查，先对齐需求退避策略，缺失时强制技术兜底或澄清。"
