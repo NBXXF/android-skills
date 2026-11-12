@@ -101,6 +101,19 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 覆盖加载态、空态、错误态、骨架屏、分页尾部、无更多、刷新中、图片加载失败、权限缺失等状态。
 - item 文案、标签、角标、按钮、头像、封面缺失时要有占位或隐藏策略，不能留下错位空洞。
 
+
+## 文字内边距问题
+- compose Text组件默认带内边距,会导致实际间距和其他组件有问题,尤其是figma/master-go 设计图读取的dsl, 建议都先去出内边距之后再计算核对
+- 去除内边距的代码如下:
+```kotlin
+   style = TextStyle(
+                        platformStyle = PlatformTextStyle(
+                            includeFontPadding = false
+                        )
+                    )
+```
+
+
 ## 实现优先级
 
 1. 先复用项目已有 Compose 组件、theme、typography、spacing token、颜色和图片加载封装。
