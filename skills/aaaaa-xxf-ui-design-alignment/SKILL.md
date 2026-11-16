@@ -70,7 +70,8 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 
 - 窗口尺寸断点、canonical layouts、导航容器选型、折叠屏铰链、edge-to-edge 强制行为和 manifest 大屏配置，按 `references/compose-adaptive-window-standards.md` 的官方口径执行。
 - 优先使用 `Modifier.fillMaxWidth`、`weight`、`widthIn/heightIn`、`requiredSize`、`aspectRatio`、`BoxWithConstraints`、adaptive grid、window size class 和 `WindowInsets` 表达布局关系。
-- "按比例适配"类需求先定缩放作用域：默认只缩放被点名的那层容器盒子（如卡片 `aspectRatio` 随宽度定高），子组件的字号、字距、图标尺寸、功能性行高与内边距保持设计稿原值；整组件 ×scale 仅限装饰性整组、固定栅格宽度对、装饰图等明确类别，不得从一句"这个 XX 按比例"扩展到全部子组件，也不得把仓库既有 ×scale 先例当通用许可；作用域不清先澄清再动手（细则见 `references/compose-adaptation-scenarios.md` 的「比例缩放的作用域边界」）。
+- "按比例适配"类需求先定缩放作用域：默认只缩放被点名的那层容器盒子（如卡片 `aspectRatio` 随宽度定高），子组件的字号、字距、图标尺寸、功能性行高与内边距保持设计稿原值；整组件 ×scale 仅限装饰性整组、固定栅格宽度对、装饰图等明确类别，不得从一句"这个 XX 按比例"扩展到全部子组件，也不得把仓库既有 ×scale 先例当通用许可。
+- 容器按宽高比锁高后内容必须有让位方案，这是产品决策：动手前按编号列方案（整组等比 / 指定弹性件自动收缩 / 间距动态压缩 / 容器放宽可滚动）让开发者选择并记录；禁止默认任一方案（细则见 `references/compose-adaptation-scenarios.md` 的「比例缩放的作用域边界」与「宽高比容器的内容让位方案」）。
 - 小屏至少检查 320dp/360dp 宽；主流机型检查 390dp/411dp 宽；有横屏、平板、折叠屏入口时按官方测试窗口基准检查更宽断点。
 - 页面容器要处理系统 inset：状态栏、导航栏、沉浸式、刘海、水滴屏、手势导航、软键盘；Compose 中优先用 `Modifier.windowInsetsPadding`、`statusBarsPadding`、`navigationBarsPadding`、`imePadding` 或项目既有 inset 封装。
 - 字号用 `sp`，但紧凑控件要验证 font scale 1.15/1.3；触及通用组件或有无障碍要求时按官方口径加测 200% 最大字号（Android 14+ 系统上限）；重要按钮、`TextField` 和输入框不能因为字体放大而文字被裁。
@@ -133,7 +134,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 缺失或无法导出的资源是否在对应代码位置添加了说明用途、设计节点、预期资源路径和待办事项的 TODO，且未引入不存在的资源引用。
 - 转换后颜色、尺寸、形状及视觉效果是否与原稿一致，是否避免默认 tint、裁切和错误缩放造成失真，是否不存在擅自替换的内置图标、近似绘制或占位资源。
 - 小屏、主流屏、字体放大下是否无重叠、无遮挡、无裁字。
-- "按比例适配"类改动是否只落在被点名的作用域（容器盒子），子组件字号/字距/间距没有被顺手 ×scale。
+- "按比例适配"类改动是否只落在被点名的作用域（容器盒子），子组件字号/字距/间距没有被顺手 ×scale；等比容器的内容让位方案（整组等比/弹性件/间距压缩/容器放宽）是否经过开发者选择并记录，而不是默认。
 - 文本组件是否明确单行/多行/截断/换行/动态高度策略，外层容器是否能承接宽高变化。
 - 图片组件是否明确比例、占位、失败态、裁剪和远程图片极端尺寸策略。
 - 横屏、分屏、多窗口、平板、折叠屏或更宽窗口下是否有合理布局，不依赖设备型号硬判断。
