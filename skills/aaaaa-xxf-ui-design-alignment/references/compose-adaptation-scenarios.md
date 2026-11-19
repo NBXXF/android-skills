@@ -29,8 +29,12 @@
 3. 间距压缩：padding/spacer 随可用空间动态压缩（弹性 Spacer、动态 spacedBy、比例化 padding），子组件尺寸与字号不动。文字优先保字号时用。
 4. 容器放宽（兜底）：不锁比例，允许内容撑高或滚动（即上文"内容超高向下长高 + 整列滚动"）。
 
+- 允许级联，但顺序固定：**间距 → 行高 → 字号**。方案 3 先让（间距不承载信息，压缩不损失可读性）→ 不够再由方案 2 兜底收缩字号。级联要同时写下两个上限：间距压缩率（建议 ≤60%，别压到贴合）与字号可读下限（≥12sp 或设计字号 60%~75%）。倒过来先缩字号属于替产品牺牲可读性。
+- 锁死比例的容器里，≥32sp 的展示型大字号（金额/大标题/Slogan）允许用 `with(LocalDensity.current) { (设计dp).dp.toSp() }` 把字号**物理上限**锁到设计尺寸，否则 fontScale 2.0 时 60sp 变 120dp 会冲出紧凑行盒压到相邻行。这是 dp 换算唯一合法用法，正文/信息型文本禁止折算。
 - 禁止不问就默认任一方案：整组 ×scale 越权（见防坑）、擅自指定让位件、静默压缩间距，都算替产品拍板。
 - 弹性件方案的前提是**有界高度约束**：`TextAutoSize` 只在 maxHeight 有界（`weight` 或固定 max）时才为高度收缩；只有 `heightIn(min=…)` 时它只按宽度收缩，高度永远不让步。
+- 让弹性件真正按高度收缩的前提是**行高相对化**：`lineHeight` 必须写成 `em`（设计 18sp/16sp 就写 `1.125.em`）或不写，autoSize 缩字号时行盒才会同步缩；写成固定 `18.sp` 时行盒高度与字号脱钩，缩字号只让文字在同一个行盒里变小，高度一分不让（2026-11 提现余额卡实测：改成 autoSize 后文字变小但仍被 18dp 内容区裁切）。
+- 间距做弹性件时用 `Spacer(Modifier.weight(设计像素值))` 而不是 `height(14.dp)`：weight 在空间够时精确等于设计值、不够时自动让位，无需按 fontScale 手算补偿；前提是父 `Column` 必须 `fillMaxSize()`（有确定高度），`wrapContentHeight` 下 weighted 子项会被压成 0。
 - 选定的让位方案要写进代码注释（KDoc 标明"谁让位、怎么让"），防止后人把让位件改回固定尺寸或误扩到全部子组件。
 
 ### 横向排列的组件（非横向滚动容器内）
@@ -42,6 +46,27 @@
     - 同行放不下必须定义压缩顺序：谁缩字号、谁省略、谁换行、谁隐藏；没有顺序就会互相挤压或裁切。
 - 禁止：只在一个机型上"刚好"的固定 dp 堆叠；假设"内容永远不会超宽"。
 - 澄清触发：设计稿未说明放不下时谁让位、能否换行/缩小时，列备选让开发者选。
+
+### 单行文本在容器内的垂直对齐（默认）
+
+判定：容器**有可见边界**（背景色/渐变/描边/圆角/分割线）+ 容器高度**不是文本撑出来的**（`height`、`heightIn(min)`、`minHeight`、行高对齐的 Row）+ 内容是**单行**（标题、标签、只读字段、单行输入框）。四条同时成立 → 文本必须垂直居中，这是默认策略，不需要请示。
+
+| 结构 | 正确写法 | 反例（都会偏上/偏下） |
+|---|---|---|
+| 背景/描边的文本块 | `Box(Modifier.heightIn(min = 42.dp).padding(h, v), contentAlignment = CenterStart)` | `Box(Modifier.heightIn(min = 42.dp).padding(top = 10.dp, bottom = 8.dp))` |
+| 文本 + 固定图标/前缀 | `Row(..., verticalAlignment = Alignment.CenterVertically)` | 给文本单独加 `padding(top = 2.dp)` 找平 |
+| 单行输入框 | 最小高+内边距放进 `decorationBox`，`contentAlignment = CenterStart` | `heightIn(min = 42.dp).padding(v = 9.dp)` 挂在 `BasicTextField` 的外层 modifier |
+| 输入框前缀（+1/图标按钮） | 与输入框同高（同一 `heightIn`）+ `contentAlignment = Center` | 前缀用文本自然高度，靠 `padding` 对齐 |
+
+三个必须同时成立的条件，缺一个都会"高度对、视觉偏"：
+
+1. **对齐由容器负责**，不是由 padding 补偿。字体上升/下降不对称、`includeFontPadding`、`lineHeight ≠ fontSize` 三者的偏差量随字号和字体变化，padding 补偿只能对当前机型当前字体成立。
+2. **高度与内边距在同一层**。`heightIn` 在外层、`padding` 也在外层时，内层文本拿到的是"剩余高度"并从顶部开始排，多出来的空间全落到底部（实测 2026-11 提现确认账号弹窗：42dp 框扣掉上下 9dp 剩 24dp，文字占 22dp，多出的 2dp 全在下面，加上 ascent/descent 不对称，肉眼一眼看出偏上）。
+3. **先消除字体度量不对称**：`lineHeight` 显式给出（≈1.17~1.4em）+ `PlatformTextStyle(includeFontPadding = false)`。否则几何居中后 ink 仍偏 1~2dp。
+
+验收方法（不能只看组件总高）：量文本 ink 到容器上下边缘的留白，两侧差 ≤1dp；有图的场景在截图里画两条水平线比对。只核"总高 = 42dp"会漏掉这类问题——高度全对，文字就是偏上。
+
+例外：设计稿明确画成非居中（下划线输入框文字贴基线、底部对齐角标、多行文本首行固定）时按标注实现并在注释写明节点；"多行文本整块居中还是首行固定"属口径歧义，列方案让开发者选。
 
 ### 纵向排列的组件（非纵向滚动容器内）
 
@@ -250,3 +275,6 @@ BasicText(
 - 弹性件没有有界高度就不会让位：`TextAutoSize` 在 maxHeight 无界（只给了 `heightIn(min=…)`）时只按宽度收缩，容器等比锁高后内容栈超高会把上下行挤出卡片；必须 `weight(1f)` 或固定 max 给出有界高度（实测踩坑：2026-11 提现余额卡金额行把渠道/账号行挤出卡外，加 weight 后按剩余高度缩字号解决）。
 - 常量宽度上限会伪装成"字号太大"：2026-11 提现流程弹窗平台头写死 `widthIn(max = 166.dp)`，24sp 名称在 103dp 内被截成 `Master...`，而卡片内还有约 160dp 空白；同页余额卡渠道行 `widthIn(max = 250.dp * scale)` 同类问题。两者去掉上限 + `TextAutoSize(16→24sp / 12→19sp×scale)` 后完整显示，短名称的箭头位置不变（`Row` Start 排列 + `weight(fill = false)`）。排查顺序永远是"先量可用宽度，再怀疑字号"，否则会一路把字号调小却仍然被截断。
 - "限 N 行"用固定高度 + `clip` 实现是裁字不是省略：字体放大后裁得更多、不显示省略号，且中文/英文断词位置一变就会半行残缺。行数上限只交给 `maxLines`，需要等高再用 `minLines = N` 或固定 item 高 + `maxLines = N`；`autoSize` 必须与 `maxLines` 成对出现，单独用只按宽度收缩、行数无界。
+- dp 定高装 sp 文本，字体放大时必然裁字：`height(38.dp)` + `padding(vertical = 10.dp)` 只剩 18dp 内容区，而 16sp 文本的 `lineHeight` 会随 fontScale 放大到 23dp，被父约束压回 18dp 后字形上下被切（实测 2026-11 提现余额卡账号行，中文尤其明显）。定高容器里放 sp 文本必须按 fontScale 1.3/2.0 验证，按容器能不能长高分两条路：能长高 → `heightIn(min = …)`；**被设计比例锁死不能长高 → 卡内再分配（间距先让，见「宽高比容器的内容让位方案」的级联）**，绝不能靠手算 `sp / fontScale` 折算（等于关掉无障碍，且 Android 14+ 非线性缩放会算错）。同页渠道行 35dp 定高有同样隐患。
+- 缩字号救不了裁字，除非行高是相对单位：固定 `lineHeight = 18.sp` 时行盒高度与字号脱钩，`TextAutoSize` 缩到下限仍然装不进 18dp，看起来"缩了但没解决"；改成 `lineHeight = 1.125.em` 后同一段代码在 fontScale 2.0 下自动退到 12sp 也不裁。判断信号：调小字号画面毫无变化 → 先查 lineHeight 是不是写成了绝对值。
+- `BasicTextField` 的文字默认贴内容区顶部，定高输入框必然"看起来偏上"：`modifier.heightIn(min = 42.dp).padding(vertical = 9.dp)` 只把外层撑到 42，内层文本仍顶格，扣掉 padding 后上方零余量、下方多出 4~5dp（实测 2026-11 提现确认账号弹窗手机号框，肉眼一眼看出没居中）。修法是把最小高度与内边距**放进 `decorationBox`** 并用 `contentAlignment = Alignment.CenterStart` 居中；同时给 `textStyle` 补显式 `lineHeight` 与 `platformStyle = PlatformTextStyle(includeFontPadding = false)`，否则 ascent/descent 不对称会让居中后仍偏 1~2dp。`fillMaxHeight` 在这里不能用——输入框的 maxHeight 通常无界，会算错。

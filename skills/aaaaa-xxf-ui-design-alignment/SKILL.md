@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-ui-design-alignment
-description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、单行标题/名称与限行多行文本（如最多 3 行）的宽度适配（先吃满可用空间、再按语义自动缩字号、最后省略或换行兜底，禁止写死宽度上限、禁止固定高度裁字）、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
+description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、单行标题/名称与限行多行文本（如最多 3 行）的宽度适配（先吃满可用空间、再按语义自动缩字号、最后省略或换行兜底，禁止写死宽度上限、禁止固定高度裁字）、单行文本在有界容器内的垂直居中（背景/描边/圆角容器内的标题、输入框、标签，禁止靠 padding 手调、禁止 BasicTextField 文本顶格）、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -82,7 +82,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 ## 需要按需读取的 references
 
 - 做窗口尺寸断点分支、平板/横屏/折叠屏/多窗口布局、导航容器选型（Bar/Rail/Drawer）、canonical layouts、edge-to-edge、大屏 manifest 决策或多窗口验证矩阵时，读取 `references/compose-adaptive-window-standards.md`。
-- 做 Compose 页面、复杂列表、弹窗、横屏/平板/折叠屏、多窗口、键盘、RTL、深色模式或无障碍适配，以及组件横/纵排布尺寸、相对定位叠层、文字超长、单行标题/名称宽度适配（先吃满空间→缩字号→兜底）、多行限行（maxLines = N）适配、图片缩放等适配决策时，读取 `references/compose-adaptation-scenarios.md`。
+- 做 Compose 页面、复杂列表、弹窗、横屏/平板/折叠屏、多窗口、键盘、RTL、深色模式或无障碍适配，以及组件横/纵排布尺寸、相对定位叠层、文字超长、单行标题/名称宽度适配（先吃满空间→缩字号→兜底）、多行限行（maxLines = N）适配、单行文本垂直居中、图片缩放等适配决策时，读取 `references/compose-adaptation-scenarios.md`。
 - 实现文本、图片、按钮、标签、输入框、卡片、Lazy item 等会受内容影响的组件时，读取 `references/compose-dynamic-layout-decisions.md`。
 
 ## Compose 动态布局原则
@@ -118,6 +118,26 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 4. **等高要求**用 `minLines = N` 或固定 item 高 + `maxLines = N`，并验证 fontScale 1.3 不裁字。
 
 与单行的关键差异：单行只有"缩到 1 行"一条路，省略即丢全部信息；多行本身能用行数吸收溢出，末行省略只丢尾部，所以缩字号的优先级更低、对省略的容忍度更高。另注意 `autoSize` 必须与 `maxLines = N` 同时给（否则只按宽度收缩、行数无界），`overflow` 必须显式 `Ellipsis`（默认 `Clip` 没有省略提示）。细则与代码见 `references/compose-adaptation-scenarios.md` 的「多行限行文本（maxLines = N）」。
+
+### 单行文本在有界容器内的垂直居中（默认策略）
+
+同时满足以下条件时，文本**必须垂直居中**，不允许靠上下 padding 目测凑：
+
+1. 内容单行（含单行输入框、单行标签）；
+2. 直接父容器有确定高度或最小高度（`height`/`heightIn`/`minHeight`），高度不是由文本自身撑出来的；
+3. 容器有可见边界：背景色、渐变、描边、圆角、分割线；
+4. 容器以文本为主体，可能附带固定尺寸的前缀/图标/箭头（如 "+1" 区号框 + 手机号、带背景的标题栏、标签胶囊、只读字段）。
+
+做法：
+
+- 用容器自身对齐：`Box(contentAlignment = Alignment.Center/CenterStart)`、`Row(verticalAlignment = Alignment.CenterVertically)`、`Column(verticalArrangement = Center)`；不要写 `padding(top = 4.dp, bottom = 2.dp)` 这类补偿。
+- 高度与内边距要写在**同一个**有界容器上：`Box(Modifier.heightIn(min = 42.dp).padding(h, v), contentAlignment = CenterStart)`，而不是把 `heightIn` + `padding` 挂在更外层、让内层文本顶格。
+- `BasicTextField` 必须走 `decorationBox`：内层文本默认贴内容区顶部，最小高与内边距写在外层 modifier 上对居中无效。
+- 居中前先消除字体度量的不对称：显式 `lineHeight` + `PlatformTextStyle(includeFontPadding = false)`；否则 ascent/descent 自带的上大下小会让几何居中看起来仍偏 1~2dp。
+
+例外：设计稿明确画成非居中（下划线输入框文字贴基线、底部对齐角标、多行文本首行对齐）时按标注实现，并在注释写明节点与对齐依据；多行文本是"整块居中"还是"首行固定"属口径歧义，按澄清处理。
+
+自查信号：文本 ink 到容器上下边缘的留白肉眼不等（尤其上方明显更紧），几乎都是"把高度和内边距加在外层、内层文本却顶格"。验收要量这个差值，两侧差 ≤1dp 才算通过——只核组件总高是否等于设计值会漏掉这类 bug（高度全对、文字就是偏上）。
 
 ## 列表和动态内容
 
@@ -162,6 +182,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 文本组件是否明确单行/多行/截断/换行/动态高度策略，外层容器是否能承接宽高变化。
 - 单行标题/名称是否先吃满父容器宽度（无设计标注却存在常量 `widthIn(max = …)` 或固定 `width` 即为未通过）；缩字号是否设了可读下限并写明取值依据；兜底是省略还是换行是否明确，且与设计稿单行口径一致。
 - 多行限行是否用 `maxLines = N` 表达（用固定高度裁剪即为未通过），`autoSize` 是否与 `maxLines` 配套（只缩字不限行会让行数无界），`overflow` 是否显式 `Ellipsis`，容器高度是否随 1..N 行变化或按需 `minLines` 等高。
+- 单行文本在有界容器（定高/最小高 + 背景/描边/圆角/分割线）内是否垂直居中：文本 ink 到容器上下边缘的留白差是否 ≤1dp；靠 `padding(top/bottom)` 手调、或 `BasicTextField` 内层文本顶格（`heightIn`/`padding` 挂在外层而非 `decorationBox`）即为未通过。
 - 图片组件是否明确比例、占位、失败态、裁剪和远程图片极端尺寸策略。
 - 横屏、分屏、多窗口、平板、折叠屏或更宽窗口下是否有合理布局，不依赖设备型号硬判断。
 - 旋转、折叠开合、窗口 resize 后滚动位置、输入内容、选中态、播放进度是否保留；是否未用 configChanges/screenOrientation 掩盖状态丢失（状态保持细则见 `references/compose-adaptive-window-standards.md`）。
