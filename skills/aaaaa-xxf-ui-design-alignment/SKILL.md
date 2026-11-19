@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-ui-design-alignment
-description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
+description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、单行标题/名称与限行多行文本（如最多 3 行）的宽度适配（先吃满可用空间、再按语义自动缩字号、最后省略或换行兜底，禁止写死宽度上限、禁止固定高度裁字）、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -64,6 +64,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 不要用 `screenWidth - 37`、固定 `offset` 堆坐标、固定 item 总数来模拟设计稿。
 - 不要让列表 item 依赖父页面某个固定高度；列表应能处理 0/1/少量/大量数据。
 - 不要把服务端文案、用户名、价格、标签、按钮文案当成固定长度；长文本必须有换行、截断或自适应策略。
+- 不要把标题、平台名、用户名、页面主标题这类单行文本的可视宽度写成常量上限（`widthIn(max = 166.dp)`、固定 `width`）。除设计稿明确标注了文本框宽度外，单行文本宽度必须由父容器剩余空间决定；常量上限等于提前截断，本可完整显示的内容会被省略。
 - 不要为了某个机型截图好看而破坏小屏、横屏、折叠屏、平板或字体放大后的布局。
 
 ## 多机型适配
@@ -81,7 +82,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 ## 需要按需读取的 references
 
 - 做窗口尺寸断点分支、平板/横屏/折叠屏/多窗口布局、导航容器选型（Bar/Rail/Drawer）、canonical layouts、edge-to-edge、大屏 manifest 决策或多窗口验证矩阵时，读取 `references/compose-adaptive-window-standards.md`。
-- 做 Compose 页面、复杂列表、弹窗、横屏/平板/折叠屏、多窗口、键盘、RTL、深色模式或无障碍适配，以及组件横/纵排布尺寸、相对定位叠层、文字超长、图片缩放等适配决策时，读取 `references/compose-adaptation-scenarios.md`。
+- 做 Compose 页面、复杂列表、弹窗、横屏/平板/折叠屏、多窗口、键盘、RTL、深色模式或无障碍适配，以及组件横/纵排布尺寸、相对定位叠层、文字超长、单行标题/名称宽度适配（先吃满空间→缩字号→兜底）、多行限行（maxLines = N）适配、图片缩放等适配决策时，读取 `references/compose-adaptation-scenarios.md`。
 - 实现文本、图片、按钮、标签、输入框、卡片、Lazy item 等会受内容影响的组件时，读取 `references/compose-dynamic-layout-decisions.md`。
 
 ## Compose 动态布局原则
@@ -89,11 +90,34 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 实现任何文本、图片或内容卡片时，先判断组件尺寸来自哪里：设计稿固定值、父容器约束、内容自然尺寸、窗口尺寸、服务端数据或图片真实比例。不要只按当前样例文案和当前截图写一个固定宽高。
 
 - 组合外层优先接收父级约束并向内传递：用 `Modifier.fillMaxWidth`、`widthIn/heightIn`、`wrapContentHeight`、`aspectRatio`、`weight` 和 padding 表达关系，避免到处读取屏幕宽度后手算。
-- `Row` 中的动态文本要明确压缩顺序：固定图标/按钮先占位，文本用 `weight`、`maxLines`、`overflow` 或 `widthIn` 承接剩余空间；不要让长文本把右侧按钮、价格、角标挤出屏幕。
+- `Row` 中的动态文本要明确压缩顺序：固定图标/按钮先占位，文本用 `weight` 承接剩余空间，用 `maxLines`、`overflow` 定义溢出策略；不要让长文本把右侧按钮、价格、角标挤出屏幕，也不要用常量 `widthIn` 提前限制文本宽度。
 - `Column` 中的动态内容要允许父容器增高、滚动或折叠；不要用固定高度裁掉多行文本、错误提示、输入框 helper text 或状态区。
 - `Text` 必须明确 `maxLines`、`overflow`、`softWrap`、`lineHeight` 和对齐方式；长文、富文本、emoji、数字、价格、日期要用最长合理样例验证。
 - 图片用 `Modifier.aspectRatio`、稳定占位和明确 `ContentScale`；远程图不能依赖原图比例刚好符合设计稿。
 - Lazy 列表 item 要按内容独立自适配，使用稳定 key，避免 item 高度变化导致状态错乱、滚动跳动或重组成本失控。
+
+### 单行标题与名称的宽度适配（默认策略）
+
+设计稿把标题、平台名、用户名、弹窗主标题画成单行，且没有说明放不下时怎么办，默认按下面三级顺序处理，不自创第四种，也不跳级：
+
+1. **先吃满可用宽度**：标题行用父容器剩余空间承接（`Modifier.fillMaxWidth()` + 文本 `Modifier.weight(1f, fill = false)`），短文本仍按原对齐方式居中/紧跟，不加常量 `widthIn(max = …)` 提前收窄。固定元素（图标/Logo/箭头/按钮）保持设计尺寸，不参与压缩。
+2. **再缩字号**：`BasicText` + `TextAutoSize.StepBased(minFontSize, maxFontSize = 设计字号, stepSize = 0.5.sp)`。`maxFontSize` 就是设计值，默认不改；`minFontSize` 取设计字号的约 60%~75%，且不低于可读下限（名称/正文类 ≥12sp，纯装饰大标题可另议）。
+3. **最后兜底**：缩到下限仍放不下才 `maxLines = 1` + `softWrap = false` + `overflow = TextOverflow.Ellipsis`；业务明确允许折行时，兜底改为换行并同步放宽行高与父容器节奏。
+
+例外与澄清：设计稿明确标注了标题文本框宽度时按标注实现，但仍要说明放不下时的策略；省略会丢失关键信息（平台名、账号、金额、地名）或需从单行改多行时，列方案让开发者选，不默认拍板。代码模板、最小字号口径、`BasicText` 与 material3 `Text` 的差异坑见 `references/compose-adaptation-scenarios.md` 的「文字超长的适配策略」。
+
+自查信号：截断后的省略号两侧还有明显空白，或可用宽度远大于文本实际宽度，几乎都是先被常量宽度上限截掉了，先查宽度而不是先改字号。审查已实现页面时，先跑 `grep -rn "widthIn(max" --include=*.kt <模块>` 逐个确认该常量的出处：有设计标注则保留并在注释写明节点，没有则按上述三级策略改造。
+
+### 多行限行文本（maxLines = N）的适配（默认策略）
+
+设计稿给了行数上限（"最多 3 行""超出省略"）时，目标从"塞进一行"变成"塞进 N 行"，顺序随之变化，不能照抄单行：
+
+1. **先吃满宽度**：同单行规则。宽度被常量上限收窄时，多行更容易多出一行、提前触顶。
+2. **让行数在 1..N 内自由伸缩**：`maxLines = N` + `softWrap = true` + 显式 `lineHeight`，容器高度跟随行数。限行只能用 `maxLines`，不能用固定高度 + `clip` 裁剪——那是裁字不是省略，字体放大后裁得更多且没有省略提示。
+3. **超 N 行再降级，按语义二选一**：内容要尽量完整（标题/说明/状态提示）→ `TextAutoSize` + `maxLines = N`，下限取设计字号 60%~85%，到下限仍超才末行省略；内容可截断或可交互（列表副标题/简介/评论/地址）→ 保字号不缩，`maxLines = N` + 末行省略，业务允许时用"展开/收起"替代省略。
+4. **等高要求**用 `minLines = N` 或固定 item 高 + `maxLines = N`，并验证 fontScale 1.3 不裁字。
+
+与单行的关键差异：单行只有"缩到 1 行"一条路，省略即丢全部信息；多行本身能用行数吸收溢出，末行省略只丢尾部，所以缩字号的优先级更低、对省略的容忍度更高。另注意 `autoSize` 必须与 `maxLines = N` 同时给（否则只按宽度收缩、行数无界），`overflow` 必须显式 `Ellipsis`（默认 `Clip` 没有省略提示）。细则与代码见 `references/compose-adaptation-scenarios.md` 的「多行限行文本（maxLines = N）」。
 
 ## 列表和动态内容
 
@@ -136,6 +160,8 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 小屏、主流屏、字体放大下是否无重叠、无遮挡、无裁字。
 - "按比例适配"类改动是否只落在被点名的作用域（容器盒子），子组件字号/字距/间距没有被顺手 ×scale；等比容器的内容让位方案（整组等比/弹性件/间距压缩/容器放宽）是否经过开发者选择并记录，而不是默认。
 - 文本组件是否明确单行/多行/截断/换行/动态高度策略，外层容器是否能承接宽高变化。
+- 单行标题/名称是否先吃满父容器宽度（无设计标注却存在常量 `widthIn(max = …)` 或固定 `width` 即为未通过）；缩字号是否设了可读下限并写明取值依据；兜底是省略还是换行是否明确，且与设计稿单行口径一致。
+- 多行限行是否用 `maxLines = N` 表达（用固定高度裁剪即为未通过），`autoSize` 是否与 `maxLines` 配套（只缩字不限行会让行数无界），`overflow` 是否显式 `Ellipsis`，容器高度是否随 1..N 行变化或按需 `minLines` 等高。
 - 图片组件是否明确比例、占位、失败态、裁剪和远程图片极端尺寸策略。
 - 横屏、分屏、多窗口、平板、折叠屏或更宽窗口下是否有合理布局，不依赖设备型号硬判断。
 - 旋转、折叠开合、窗口 resize 后滚动位置、输入内容、选中态、播放进度是否保留；是否未用 configChanges/screenOrientation 掩盖状态丢失（状态保持细则见 `references/compose-adaptive-window-standards.md`）。

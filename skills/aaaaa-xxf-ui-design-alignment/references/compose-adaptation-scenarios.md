@@ -64,13 +64,101 @@
 
 ### 文字超长的适配策略
 
-- 判断维度：文本是控件标签、单 token 数据还是段落；可用空间是否有限；业务是否允许省略。按类型给默认，不逐案发明：
+- 判断维度：文本是控件标签、单 token 数据还是段落；可用空间是否有限；行数上限是 1 还是 N>1；业务是否允许省略。按类型给默认，不逐案发明：
     - 控件标签（button/tab/导航栏标题/输入框 label）：默认**单行 + 省略号**（`maxLines=1` + `overflow=Ellipsis`），不换行撑高控件；除非业务明确要多行。
     - 单 token 数据（金额/城市/电话/账号/编号）：默认**单行 + 自动缩放字号**（`TextAutoSize.StepBased`，设可读下限如 9sp）；这类内容不可能合理换行、通常也不允许省略。禁止"硬宽度约束 + 手算估宽"——估不足会在约束边缘裁半个字符（实测踩坑：金额数字显示半边）。
-    - 段落/说明/消息：默认**多行自适应**（softWrap）+ 容器自然增高或滚动，不裁字。
+    - 段落/说明/消息：默认**多行自适应**（softWrap）+ 容器自然增高或滚动，不裁字；设计给了行数上限时按「多行限行文本（maxLines = N）」处理，不套用单行策略。
     - 数字/价格注意 fallback 字体测量差异（如 ¥ 在某些字体走回退变宽），用最长合理样例验证。
-- 单行空间也有限时的降级顺序：缩字号（至可读下限）→ 省略号（业务允许）→ 换行（布局允许）；任一降级在代码注释标明业务口径。
+- 单行空间也有限时的降级顺序（前提：已按下一节做完"吃满可用宽度"）：缩字号（至可读下限）→ 省略号（业务允许）→ 换行（布局允许）；任一降级在代码注释标明业务口径。
 - 澄清触发：省略会丢关键信息（金额/账号/地址），或控件既不允许换行也不允许缩字号时，让开发者指定策略，不要默认省略。
+
+#### 标题/名称类单行文本：三级宽度策略（默认）
+
+适用于设计稿画成单行的标题、平台名、用户名、弹窗主标题、列表主标题，且设计未说明放不下时怎么办。顺序固定，不许跳级，也不许自创第四种（行数上限 N>1 的多行场景见下一小节，降级顺序不同）：
+
+| 级别 | 做法 | 判定"该进入下一步"的条件 |
+| --- | --- | --- |
+| 1 先吃满空间 | 行容器 `fillMaxWidth()`，文本 `weight(1f, fill = false)`；固定元素（图标/Logo/箭头/按钮）保持设计尺寸 | 文本在设计字号下的自然宽度 > 可用宽度 |
+| 2 再缩字号 | `TextAutoSize.StepBased(minFontSize, maxFontSize = 设计字号, .5.sp)` | 已到 `minFontSize` 仍超宽 |
+| 3 最后兜底 | `maxLines = 1` + `softWrap = false` + `overflow = Ellipsis`；业务允许折行时改为换行并放宽行高节奏 | — |
+
+- **第 1 级的唯一敌人是常量宽度上限**：`widthIn(max = 166.dp)`、固定 `Modifier.width(...)`、"按比例留白"的 `widthIn(max = 250.dp * scale)` 都属于把设计稿里某个盒子的宽度当成了文本的可视宽度。除设计稿明确标注文本框宽度外，这类常量一律删掉，宽度交给父容器——
+    - 短文本不会因此变宽：行仍 `Arrangement.Center`/Start，`weight(1f, fill = false)` 让文本只占自身宽度，箭头、按钮继续紧跟文字。
+    - 长文本才有收益：省下的空白直接变成可显示字符。
+- **第 2 级的取值口径**：`maxFontSize` 就是设计字号，不作为"建议上限"另调；`minFontSize` 取设计字号的约 60%~75%，同时不低于可读下限（名称/正文类 ≥12sp）。字号带 `scale` 的整组缩放场景，下限按同一比例或封顶（如 `12.sp * scale.coerceAtMost(16f / 12f)`），避免宽屏时下限被 scale 抬得缩不动。
+- **第 3 级必须先定义**：省略号是"降到下限后仍放不下"的结果，不是首选策略；单行口径下它就是默认兜底，但要在 KDoc 写明"到下限才省略"，防止后人把 `overflow` 当主策略、把宽度常量加回来。
+
+```kotlin
+// 标题行：宽度来自父容器，短标题仍整体居中，长标题先吃满再缩字，最后才省略
+Row(
+    modifier = Modifier.fillMaxWidth(),            // 不写 widthIn(max = …)
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.Center,
+) {
+    Image(painterResource(iconRes), null, Modifier.size(44.dp))   // 固定元素不参与压缩
+    Spacer(Modifier.width(18.dp))
+    BasicText(
+        text = platformName,
+        modifier = Modifier.weight(1f, fill = false),  // 短文本只占自身宽度
+        style = TextStyle(
+            color = Color.White,
+            fontSize = 24.sp,                        // 设计字号 = autoSize 上限
+            lineHeight = 34.sp,                      // 用 sp 声明，随字号等比缩放
+            fontWeight = FontWeight.SemiBold,
+        ),
+        autoSize = TextAutoSize.StepBased(
+            minFontSize = 16.sp,                     // ≈设计字号 2/3，且 ≥12sp 可读下限
+            maxFontSize = 24.sp,
+            stepSize = 0.5.sp,
+        ),
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,            // 到下限才省略
+    )
+}
+```
+
+- material3 `Text` 目前没有 `autoSize` 参数（截至 compose BOM 2025.05 / material3 1.3.x），缩字必须换 `androidx.compose.foundation.text.BasicText`；后续升级 material3 后先确认是否已提供同名参数，有则优先用 `Text` 以减少不继承 `LocalTextStyle` 的差异。替换时注意两点：
+    - `BasicText` 的 `style` 不合并 `LocalTextStyle`，主题或所在位置若有自定义 `fontFamily`/`letterSpacing`，必须显式写进 `style`，否则字体回退、字距丢失（`FontFamily.Default` 的主题无影响）。
+    - 定高行（如 35dp 渠道行）替换后保持与原 `Text` 相同的 `includeFontPadding` 取舍，度量一变就可能顶破定高盒子。
+- 例外与澄清：设计稿明确标注了文本框宽度 → 按标注实现，但仍需说明放不下时的策略；业务要求"必须两行"或"名称必须完整不得省略" → 折行会破单行构图/定高，需列方案（放宽行高与纵向节奏 / 保底省略 / 降级为两行）让开发者选。
+- 自查信号：省略号两侧还有明显空白、或可用宽度远大于文本实际宽度，说明第 1 级没做，先查宽度常量而不是先调字号；反过来，缩字号却看不到变化，先确认 `maxWidth` 是否真由父容器给出（`widthIn`/固定 `width` 会让 autoSize 在错误约束里循环）。
+
+#### 多行限行文本（maxLines = N）：与单行的差异（默认）
+
+设计稿给了行数上限（"最多 3 行""两行截断""超出省略"）时，目标不是"塞进一行"，而是"让内容在 1..N 行内排下"。降级顺序与单行**不同**，不能照抄：
+
+| 维度 | 单行 `maxLines = 1` | 多行限行 `maxLines = N > 1` |
+| --- | --- | --- |
+| 溢出表现 | 整句在末尾被截断，信息几乎全丢 | 只截末行，前 N−1 行信息保留 |
+| 缩字号目标 | 塞进 1 行，收益直接 | 塞进 N 行；缩 10% 常常不足以减少一行，收益递减 |
+| 行数本身 | 恒为 1，只能靠缩字号/省略 | 1..N 自由伸缩，本身是第一层弹性 |
+| 默认降级 | 吃满宽度 → 缩字号 → 省略 | 吃满宽度 → 行数自适应 → 缩字号（按语义）→ 末行省略 / 展开 |
+| 高度 | 单行定高安全 | 随 1..N 行变化；需要等高时才用 `minLines = N` |
+
+1. **先吃满宽度**：与单行同规则（`fillMaxWidth()`，无设计标注就删掉常量 `widthIn`）。多行场景下宽度上限的伤害更大——宽度少 20% 常常意味着多出一行，直接提前触顶被省略。
+2. **让行数在上限内自由伸缩**：`maxLines = N` + `softWrap = true` + 显式 `lineHeight`，容器高度跟随 1..N 行。**限行只能用 `maxLines`，不能用固定高度 + `clip` 裁剪**——后者是裁字不是省略，字体放大后裁得更多，且不显示省略号。
+3. **超 N 行再降级，按业务语义二选一**（单行没有这个分叉）：
+    - **内容要尽量完整**（标题、说明、状态提示、协议摘要）：缩字号 `TextAutoSize.StepBased(下限, 设计字号, .5.sp)` + `maxLines = N`，autoSize 会在 N 行内选最大可容纳字号；下限取设计字号 60%~85%（短标题取 80% 以上、状态/提示类可到 60%，实测先例 15sp→9sp），到下限仍超才末行省略。
+    - **内容可截断或可交互**（列表副标题、用户简介、评论、地址）：不缩字号，直接 `maxLines = N` + `overflow = Ellipsis`；业务允许时优先"展开/收起"交互替代省略，比缩小正文更可读。
+4. **等高场景**：列表 item 要求整齐时用 `minLines = N`（1 行内容也占 N 行高）或固定 item 高度 + `maxLines = N`，并验证 fontScale 1.3 下不裁字；只为"看起来整齐"而用固定高度裁字属未通过。
+
+```kotlin
+// 3 行限制的状态提示：宽度吃满 → 3 行内自适应 → 缩字到下限 → 末行省略
+BasicText(
+    text = statusTip,
+    style = TextStyle(fontSize = 15.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold),
+    autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 15.sp, stepSize = 0.5.sp),
+    softWrap = true,                 // 多行必须为 true
+    maxLines = 3,                    // 行数上限只由 maxLines 表达
+    overflow = TextOverflow.Ellipsis, // 末行省略，不静默裁字
+)
+```
+
+- 坑：`autoSize` 不配 `maxLines` 时只按宽度收缩、行数无界——内容越长行数越多，等于放弃行数约束；`maxLines = N` 必须一起给。
+- 坑：`maxLines = N` 但 `overflow` 用默认 `Clip` 时不显示省略号，用户不知道还有内容；限行场景必须显式 `Ellipsis`（仅设计明确不要省略号时才用 `Visible`）。
+- 末端省略丢的若是关键信息（金额、日期、结论），优先"展开"或调整排版把关键信息前置，不默认截断。
+- 澄清触发：省略会丢关键信息、业务要求"必须完整显示"、或列表需要等高但 1 行 item 被拉高时，列方案（缩字 / 展开 / 改两行布局 / 放宽高度）让开发者选。
 
 ### 图片的适配策略
 
@@ -108,6 +196,7 @@
 ## 字体、显示大小和文本系统
 
 - 验证 font scale 1.15/1.3，触及通用组件时考虑更大字体；按钮、标签、输入框、顶部栏和底部栏不能裁字。
+- 限行文本（`maxLines = N`）在 fontScale 1.3 下常常从 2 行变 3 行、或从 3 行溢出：验证时要同时看行数上限是否被顶破、容器高度策略（自适应 / `minLines` 等高）是否仍成立、省略是否发生在可接受的位置。
 - 系统显示大小、粗体文本、不同系统字体、fallback font、emoji、数字等宽/非等宽都会影响测量；不要用固定高度假设文本永远一行。
 - `Text` 的 `maxLines`、`overflow`、`softWrap`、`lineHeight`、`includeFontPadding` 相关项目约定要明确。
 - 富文本、可点击 span、混排图标、价格、小数、倒计时、日期、单位要用最长合理样例验证。
@@ -159,3 +248,5 @@
 - 部位级核对：整图视觉检查容易漏"小字压在按钮上"级别的缺陷；按关键交界裁剪放大（PIL crop + resize）逐项确认，"金额每个字符完整""链接与按钮有明确间隙"这类可判定的问法比"布局正常吗"可靠。
 - 比例适配的作用域越权是高频返工点：需求说"这个 card 按比例适配"，实现却把卡内字号、字距、图标、内边距全部 ×scale——把仓库里弹窗族的整组缩放先例当成了需求范围（实测踩坑：2026-11 提现余额卡，整卡缩放被全部还原，只保留容器 `aspectRatio`）。动手前先按「比例缩放的作用域边界」确认哪一层缩放、哪一层不动；等比容器的内容让位方案按「宽高比容器的内容让位方案」列选项让开发者选。
 - 弹性件没有有界高度就不会让位：`TextAutoSize` 在 maxHeight 无界（只给了 `heightIn(min=…)`）时只按宽度收缩，容器等比锁高后内容栈超高会把上下行挤出卡片；必须 `weight(1f)` 或固定 max 给出有界高度（实测踩坑：2026-11 提现余额卡金额行把渠道/账号行挤出卡外，加 weight 后按剩余高度缩字号解决）。
+- 常量宽度上限会伪装成"字号太大"：2026-11 提现流程弹窗平台头写死 `widthIn(max = 166.dp)`，24sp 名称在 103dp 内被截成 `Master...`，而卡片内还有约 160dp 空白；同页余额卡渠道行 `widthIn(max = 250.dp * scale)` 同类问题。两者去掉上限 + `TextAutoSize(16→24sp / 12→19sp×scale)` 后完整显示，短名称的箭头位置不变（`Row` Start 排列 + `weight(fill = false)`）。排查顺序永远是"先量可用宽度，再怀疑字号"，否则会一路把字号调小却仍然被截断。
+- "限 N 行"用固定高度 + `clip` 实现是裁字不是省略：字体放大后裁得更多、不显示省略号，且中文/英文断词位置一变就会半行残缺。行数上限只交给 `maxLines`，需要等高再用 `minLines = N` 或固定 item 高 + `maxLines = N`；`autoSize` 必须与 `maxLines` 成对出现，单独用只按宽度收缩、行数无界。
