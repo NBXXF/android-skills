@@ -41,9 +41,10 @@
 - 每个动态 `Text` 都要明确宽度策略、`maxLines`、`overflow`、`softWrap`、`lineHeight` 和对齐方式。
 - 单行适合标题栏、按钮、短标签、金额、状态短文案；用户名、昵称、商品名、活动标题、说明文、错误提示、协议文案默认不能假设永远单行。
 - 单行文本放进有背景/描边/圆角的有界容器（定高或最小高）时默认垂直居中，对齐由容器给（`Box(contentAlignment = CenterStart)`、`Row(verticalAlignment = CenterVertically)`），不要用上下 `padding` 找平；先把 `lineHeight` 写成显式值、`includeFontPadding = false`，再谈居中。验收量文本 ink 上下留白差 ≤1dp，而不是看容器总高。
-- 单行标题/名称的宽度按三级顺序定：先吃满父容器剩余宽度（`fillMaxWidth` + `weight(1f, fill = false)`，不加常量 `widthIn(max = …)` 或固定 `width`）→ 溢出时 `BasicText` + `TextAutoSize.StepBased(下限 ≈ 设计字号 60%~75% 且 ≥12sp, 上限 = 设计字号)` → 到下限仍放不下才省略（业务允许折行则以换行为兜底）。设计稿明确标注文本框宽度时才按标注收窄，并说明溢出策略。细则见 `compose-adaptation-scenarios.md` 的「标题/名称类单行文本：三级宽度策略」。
+- 单行标题/名称的宽度按三级顺序定：先吃满父容器剩余宽度（`fillMaxWidth` + `weight(1f, fill = false)`，不加常量 `widthIn(max = …)` 或固定 `width`）→ 溢出时用共享组件 `AutoFitText`（内部 `BasicText` + `TextAutoSize.StepBased`；名称类下限约设计字号 60%~75% 且 ≥12sp，金额/账号等读数类直接给 8sp）` → 到下限仍放不下才省略（业务允许折行则以换行为兜底）。设计稿明确标注文本框宽度时才按标注收窄，并说明溢出策略。细则见 `compose-adaptation-scenarios.md` 的「标题/名称类单行文本：三级宽度策略」。
 - 有限行的多行文本（`maxLines = N > 1`）不套用单行策略：先吃满宽度 → 让行数在 1..N 内自由伸缩（容器高度跟随）→ 超 N 行时按语义分流：内容要尽量完整的用 `autoSize + maxLines = N`（下限 ≈ 设计字号 60%~85%），可截断/可交互的保字号并末行省略或"展开/收起"。限行只能用 `maxLines`，禁止用固定高度 + `clip` 裁字；`autoSize` 必须配 `maxLines`，否则只缩宽不限行。细则见同文件「多行限行文本（maxLines = N）：与单行的差异」。
-- `lineHeight` 用 `sp` 声明，`TextAutoSize` 才会随字号等比缩放；写成固定值会在大字号缩小时留下虚高行高、撑破定高容器。多行文本必须显式给 `lineHeight`，不要依赖字体默认行距。
+- `lineHeight` 要用**相对单位**（如 `1.2.em`），不要写固定 sp：固定 sp 行高不随 `TextAutoSize` 缩，缩了字号行盒仍是原高，在定高容器里照样裁字，看起来就是"缩了但没解决"。写成 em 后行高与字号绑成单一自由度。多行文本必须显式给 `lineHeight`，不要依赖字体默认行距。
+- 金额/读数类展示收敛为单一组件（内部固定单行 + `autoSize` + 下限 + 省略），调用点只传设计字号/颜色/字重/下限；下限由组件做数值夹取，兜住 `1.sp` 这类"等于没有下限"的误传。富文本金额（符号单独小字号）的符号用 em 相对字号，随金额字号等比缩。
 - 多行文本要处理行高、段落间距、末行按钮/标签挤压、父容器动态高度和 Lazy item 高度变化。
 - 对价格、数字、日期、倒计时、单位、富文本、emoji、换行符、英文长词和无空格长串使用极值样例。
 - 需要测量文本时优先让布局系统处理；只有确实需要预判截断、对齐或自定义绘制时才使用 `TextMeasurer`，并注意缓存和重组成本。

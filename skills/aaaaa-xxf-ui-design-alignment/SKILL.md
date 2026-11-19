@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-ui-design-alignment
-description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、单行标题/名称与限行多行文本（如最多 3 行）的宽度适配（先吃满可用空间、再按语义自动缩字号、最后省略或换行兜底，禁止写死宽度上限、禁止固定高度裁字）、单行文本在有界容器内的垂直居中（背景/描边/圆角容器内的标题、输入框、标签，禁止靠 padding 手调、禁止 BasicTextField 文本顶格）、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
+description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、文字适配（优先用共享组件 `AutoFitText`，同类问题组件化收口，禁止逐页手写 `autoSize`）、单行标题/名称与限行多行文本（如最多 3 行）的宽度适配（先吃满可用空间、再按语义自动缩字号、最后省略或换行兜底，禁止写死宽度上限、禁止固定高度裁字）、单行文本在有界容器内的垂直居中（背景/描边/圆角容器内的标题、输入框、标签，禁止靠 padding 手调、禁止 BasicTextField 文本顶格）、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -96,17 +96,44 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 图片用 `Modifier.aspectRatio`、稳定占位和明确 `ContentScale`；远程图不能依赖原图比例刚好符合设计稿。
 - Lazy 列表 item 要按内容独立自适配，使用稳定 key，避免 item 高度变化导致状态错乱、滚动跳动或重组成本失控。
 
+### 文字适配是写 UI 的默认步骤（组件优先，不做页面级补丁）
+
+任何涉及文本的 UI 任务，动手前先回答三件事，结论要体现在实现或注释里：
+
+1. **这段文本是什么语义**：只读读数（金额/账号/手机号/时间/数量/按钮文案）、多行说明，还是可交互富文本。
+2. **放不下时怎么办**：吃满宽度 → 缩字号 → 省略/换行，按本文「单行」「多行限行」两节的三级策略走，不临时发明第四种。
+3. **这是第几次遇到**：同一类语义文本在第 2 处出现、或明显会复现时，必须收口到组件，不能在调用点再写一遍 `BasicText + TextAutoSize`。
+
+**默认动作**：只读单行文本一律用 `AutoFitText`；不要手写 `TextAutoSize.StepBased`，不要把缩字/省略策略复制进业务文件。
+
+**判断"一类问题"还是"个例"**：
+
+- **一类问题**（同一语义文本多处出现、同一套"先吃满→缩字→兜底"策略反复出现、同一类定高容器裁字）→ 抽/扩组件，放到共享 UI 层（`xxf_android/core/lib_compose` 或 feature 的公共 ui 包），一次性替换所有同类调用点，并在变更说明里列出被替换的位置。
+- **个例**（只影响单页的排版关系：间距、层级、一次性背景/定位）→ 就页面改，不抽组件；在注释里写明"为什么不成类"，避免下次被误当模式复制。
+
+**组件不够用时按这个顺序扩，不要绕开组件另起一套**：
+
+1. 先用现有参数表达：`maxLines`（行数）、`overflow`（省略/裁剪）、`minFontSize`（下限）、`em` 行高/字距。
+2. 参数确实缺失 → 给组件加**"不传即旧行为"的增量开关**（如 `textStyle` 承接 `fontFamily`/`drawStyle`/`shadow`，`autoSize` 承接双层描边共享测量），默认值一律不动。
+3. 语义上已是另一类组件（描边艺术字、带图标或富文本的金额、格宽由内容反推的网格）→ 抽新组件放共享层，复用同一套策略，不要复制粘贴后各改各的。
+
+**反模式（评审直接打回）**：业务代码里出现 `TextAutoSize.StepBased`；同一套策略在 2 个以上文件各写一份；用固定高度 + `clip` 裁字；用常量 `widthIn(max = …)` 提前截断；为单页问题复制一个组件副本。审查时先跑 `grep -rn "TextAutoSize" --include=*.kt <模块>`，业务模块命中且不在组件内部，基本就是没收口。
+
 ### 单行标题与名称的宽度适配（默认策略）
 
 设计稿把标题、平台名、用户名、弹窗主标题画成单行，且没有说明放不下时怎么办，默认按下面三级顺序处理，不自创第四种，也不跳级：
 
 1. **先吃满可用宽度**：标题行用父容器剩余空间承接（`Modifier.fillMaxWidth()` + 文本 `Modifier.weight(1f, fill = false)`），短文本仍按原对齐方式居中/紧跟，不加常量 `widthIn(max = …)` 提前收窄。固定元素（图标/Logo/箭头/按钮）保持设计尺寸，不参与压缩。
-2. **再缩字号**：`BasicText` + `TextAutoSize.StepBased(minFontSize, maxFontSize = 设计字号, stepSize = 0.5.sp)`。`maxFontSize` 就是设计值，默认不改；`minFontSize` 取设计字号的约 60%~75%，且不低于可读下限（名称/正文类 ≥12sp，纯装饰大标题可另议）。
+2. **再缩字号**：用 `AutoFitText`（内部即 `TextAutoSize.StepBased(minFontSize, maxFontSize = 设计字号, stepSize = 0.5.sp)`，业务代码不手写）。`maxFontSize` 就是设计值，默认不改；`minFontSize` 取设计字号的约 60%~75%，且不低于可读下限 —— 读数类（金额/账号/名称/时间）一律给到 8sp（`AutoFitText` 的内置下限，再低没有意义），宁可缩字也不提前省略；只有纯装饰大标题才可自行抬高。
 3. **最后兜底**：缩到下限仍放不下才 `maxLines = 1` + `softWrap = false` + `overflow = TextOverflow.Ellipsis`；业务明确允许折行时，兜底改为换行并同步放宽行高与父容器节奏。
 
 例外与澄清：设计稿明确标注了标题文本框宽度时按标注实现，但仍要说明放不下时的策略；省略会丢失关键信息（平台名、账号、金额、地名）或需从单行改多行时，列方案让开发者选，不默认拍板。代码模板、最小字号口径、`BasicText` 与 material3 `Text` 的差异坑见 `references/compose-adaptation-scenarios.md` 的「文字超长的适配策略」。
 
 自查信号：截断后的省略号两侧还有明显空白，或可用宽度远大于文本实际宽度，几乎都是先被常量宽度上限截掉了，先查宽度而不是先改字号。审查已实现页面时，先跑 `grep -rn "widthIn(max" --include=*.kt <模块>` 逐个确认该常量的出处：有设计标注则保留并在注释写明节点，没有则按上述三级策略改造。
+
+自适应文本组件 `AutoFitText`（手机号、邮箱、昵称、金额/余额、数量、时间/时长、按钮/标签、说明文案）：同一类文本在多个位置出现时一律用它承接上面的策略，业务只传设计字号、颜色、字重、字距，不再各自 `BasicText + TextAutoSize`。**默认策略是契约**：`maxLines = 1` + `softWrap = false`（单行不折行）→ `autoShrink = true` 按 0.5sp 步进缩字号（只缩不放）→ 缩到 `minFontSize`（不传时设计字号 60%，且不低于 8sp 可读下限）→ 仍放不下才 `overflow = Ellipsis`；扩展时不许改这些默认值，只能加"不传即旧行为"的开关。**金额、账号、时间/时长、按钮这类"必须一行读完"的字段必须用默认值**，只有说明/条款/2~3 行标题才允许 `maxLines = 2~3`，且正文下限给到设计字号 80% 以上。放宽后要保证父容器给出有界宽度（否则不会折行），组件按 `maxLines > 1` 自动打开 `softWrap`——`softWrap = false` 在 Compose 内部会把行数强制压回 1。默认整份继承 `LocalTextStyle`（字号/字重/字距/行高/对齐，颜色按 `LocalTextStyle` → `LocalContentColor` 回落）：`BasicText` 不读主题，漏字体家族会静默退回系统字体，漏行高会让行盒变矮、纵向节奏错位。两个扩展口：`textStyle`（最后 merge、同名字段优先，承接 `fontFamily` / `drawStyle` 描边 / `shadow` / `platformStyle`）；`autoSize`（外部 `TextAutoSize`，传了就不再按 `minFontSize`/`autoShrink` 自建，用于描边+填充双层共用一次测量——两层除颜色/`drawStyle` 外的参数必须一致）。下限要防无效配置：`minFontSize` 大于等于设计字号时按 60% 回落，否则 `floor == fontSize` 会让 autoSize 静默关闭、长文本直接省略。缩字号后仍需成立的度量（行高、负字距）必须用 `em`；行高明显小于字号（`< 1em` 或固定 sp 小于字号）会被组件当无效配置丢弃、回落自然行高。自动缩放只按"末行是否被省略"判定，**不看高度**：固定 dp 高的容器要用 `dp.toSp()` 给字号物理封顶，不能指望组件按高度缩字。金额要扫全：`formatLocalizedAmount()` 直出的纯读数（余额、列表金额、播报金额、待打款）走组件；`+%s` 模板或整句拼接的按拼接文本处理，但要确认它所在容器不会裁字。
+
+已落地的共享实现：`xxf_android/core/lib_compose` 的 `com.xxf.compose.ui.text.AutoFitText`（`BasicText` + `TextAutoSize`，需 Compose UI ≥ 1.8，对应 `compose-bom` 2025.05.00），发布为 `com.NBXXF.xxf_android:lib_compose`（经 `lib_view` 传递依赖）。跨 App 复用直接依赖该产物，**不要再复制副本**；Reels 已删除本地副本、统一走 maven 版本。改组件前先读它 KDoc 的「默认策略（契约，扩展时不许改默认值）」一节。
 
 ### 多行限行文本（maxLines = N）的适配（默认策略）
 
@@ -117,7 +144,7 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 3. **超 N 行再降级，按语义二选一**：内容要尽量完整（标题/说明/状态提示）→ `TextAutoSize` + `maxLines = N`，下限取设计字号 60%~85%，到下限仍超才末行省略；内容可截断或可交互（列表副标题/简介/评论/地址）→ 保字号不缩，`maxLines = N` + 末行省略，业务允许时用"展开/收起"替代省略。
 4. **等高要求**用 `minLines = N` 或固定 item 高 + `maxLines = N`，并验证 fontScale 1.3 不裁字。
 
-与单行的关键差异：单行只有"缩到 1 行"一条路，省略即丢全部信息；多行本身能用行数吸收溢出，末行省略只丢尾部，所以缩字号的优先级更低、对省略的容忍度更高。另注意 `autoSize` 必须与 `maxLines = N` 同时给（否则只按宽度收缩、行数无界），`overflow` 必须显式 `Ellipsis`（默认 `Clip` 没有省略提示）。细则与代码见 `references/compose-adaptation-scenarios.md` 的「多行限行文本（maxLines = N）」。
+与单行的关键差异：单行只有"缩到 1 行"一条路，省略即丢全部信息；多行本身能用行数吸收溢出，末行省略只丢尾部，所以缩字号的优先级更低、对省略的容忍度更高。另注意 `autoSize` 必须与 `maxLines = N` 同时给（否则只按宽度收缩、行数无界），`overflow` 必须显式 `Ellipsis`（默认 `Clip` 没有省略提示）。共享层直接用 `AutoFitText(maxLines = N, minFontSize = …)` 即可承接第 2~3 步。细则与代码见 `references/compose-adaptation-scenarios.md` 的「多行限行文本（maxLines = N）」。
 
 ### 单行文本在有界容器内的垂直居中（默认策略）
 
@@ -182,6 +209,8 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 文本组件是否明确单行/多行/截断/换行/动态高度策略，外层容器是否能承接宽高变化。
 - 单行标题/名称是否先吃满父容器宽度（无设计标注却存在常量 `widthIn(max = …)` 或固定 `width` 即为未通过）；缩字号是否设了可读下限并写明取值依据；兜底是省略还是换行是否明确，且与设计稿单行口径一致。
 - 多行限行是否用 `maxLines = N` 表达（用固定高度裁剪即为未通过），`autoSize` 是否与 `maxLines` 配套（只缩字不限行会让行数无界），`overflow` 是否显式 `Ellipsis`，容器高度是否随 1..N 行变化或按需 `minLines` 等高。
+- 单行文本（手机号/邮箱/昵称/金额/数量/时长/按钮文案）是否复用一个公共策略组件（业务只传样式）；金额类要扫全：列表/播报里的纯金额字段（如 `record.amount`）同样要走组件，不要只改主视觉上的大金额；带 `+%s` 模板或整句拼接的金额按拼接文本处理，不算纯读数；金额/账号/时长/按钮是否仍用 `maxLines = 1` + `Ellipsis` 默认值，多行用例是否由父容器给出有界宽度；默认样式是否整份继承 `LocalTextStyle`（含字体家族、行高、对齐与颜色回落顺序）；`minFontSize` 是否确实小于设计字号（等于或大于会让 `autoSize` 静默失效）；缩字号后仍需成立的负字距是否用 `em`；定高容器是否用 `dp.toSp()` 做了字号封顶。
+- 是否收口到组件：业务模块里是否残留手写 `TextAutoSize.StepBased` 或第二份缩字/省略逻辑（`grep -rn "TextAutoSize" --include=*.kt <模块>`，命中且不在组件内部即未收口）；`AutoFitText` 不够用时是加"不传即旧行为"的参数或抽新组件，还是在调用点另起一套；为单页问题复制的组件副本是否已合并回共享层；新组件是否有"默认策略"KDoc 契约，避免后续被逐个改默认值。
 - 单行文本在有界容器（定高/最小高 + 背景/描边/圆角/分割线）内是否垂直居中：文本 ink 到容器上下边缘的留白差是否 ≤1dp；靠 `padding(top/bottom)` 手调、或 `BasicTextField` 内层文本顶格（`heightIn`/`padding` 挂在外层而非 `decorationBox`）即为未通过。
 - 图片组件是否明确比例、占位、失败态、裁剪和远程图片极端尺寸策略。
 - 横屏、分屏、多窗口、平板、折叠屏或更宽窗口下是否有合理布局，不依赖设备型号硬判断。
