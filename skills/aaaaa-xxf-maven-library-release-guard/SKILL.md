@@ -135,13 +135,13 @@ javap -classpath /tmp/library-release.jar -c -p fully.qualified.EntryClass
 
 1. 全部做到位，可以交付/发布
 2. 有残留问题，继续修（列出具体项）
-3. 有残留但接受，先记录到 `vibe-coding-clarify.md` 再发布
+3. 有残留但接受，先记录到 `docs/vibe-coding-clarify/vibe-coding-clarify.md` 再发布
 
 规则：
 
 - 用户未选择前，不得给出交付结论，不得执行发布动作。
 - 用户选 2：回到修复，修完后重新自查、重新发起确认。
-- 用户选 3：必须先按 `aaaaa-xxf-clarify-question` 的记录格式把接受的风险写入对应模块 `vibe-coding-clarify.md`，风险结论最高 `Warn`。
+- 用户选 3：必须先按 `aaaaa-xxf-clarify-question` 的记录格式把接受的风险写入对应模块 `docs/vibe-coding-clarify/vibe-coding-clarify.md`，风险结论最高 `Warn`。
 - 用户跳过、忽略或中断确认：按未确认处理，风险结论 `Block`。
 
 ## 交付结论
@@ -154,5 +154,5 @@ javap -classpath /tmp/library-release.jar -c -p fully.qualified.EntryClass
 - release 单测、release AAR 和宿主集成分别验证了什么。
 - 是否删除公共符号，以及对应兼容风险。
 - 职责收尾六维度摘要：契约设计、架构边界、性能资源、宿主解耦、设计原则、发布工程各一句"通过/未触及（理由）/残留（项）"。
-- 职责收尾确认：用户主动选择的选项；选择"有残留但接受"时附 `vibe-coding-clarify.md` 记录路径。
+- 职责收尾确认：用户主动选择的选项；选择"有残留但接受"时附 `docs/vibe-coding-clarify/vibe-coding-clarify.md` 记录路径。
 - 风险结论：存在 Library 自身 BuildConfig 业务依赖、混淆注解/规则不同步、未验证 release 产物，或未完成职责收尾强制确认时为 `Block`；用户选择"有残留但接受"并已记录决策时最高 `Warn`；全部通过且用户主动确认做到位后为 `Pass`。

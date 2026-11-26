@@ -26,9 +26,9 @@ description: 处理 Android 项目中的通用编码任务交付流程。用于 
 9. 改动涉及可发布 Android Maven Library/AAR（含应用了 `publish_maven.gradle` 的模块）、`BuildConfig`、`buildFeatures`、`maven-publish`、发布脚本/POM、Maven 坐标或版本、发布 variant、调试/环境开关或宿主初始化配置时，必须读 `aaaaa-xxf-maven-library-release-guard`，完成 release 变体与 AAR 字节码门禁，并按其"职责收尾与强制确认"一节用 AskUserQuestion 让用户主动确认是否做到位。
 10. 改动跨模块、触及公共 API、生命周期、线程、权限、存储、网络、图片、发布配置时，读 `aaaaa-xxf-code-reviewer` 和 `aaaaa-xxf-risk-gate`。
 11. 改动涉及 app、工程内 library 或可发布 Maven library，且新增或修改反射、注解、泛型解析、序列化、ServiceLoader/JNI、按名称访问、依赖、混淆或发布配置时，必须读 `aaaaa-xxf-code-shrinking-guard` 并完成对应 app rules/consumer rules、release 产物和 minify 门禁，不得因用户未提混淆或模块不发布 Maven 而跳过。
-12. 根据 Figma/Figama、MasterGo、蓝湖、摹客、截图或设计稿实现/修复 UI 时，读 `aaaaa-xxf-ui-design-alignment`。
+12. 根据 Figma/Figama、MasterGo、蓝湖、摹客、截图或设计稿实现/修复 UI 时，读 `aaaaa-xxf-ui-design-alignment`；**写入集合只能等于本次点名的属性**，贴新设计图改已有组件前，先检索 `<module>/docs/vibe-coding-clarify/`（含历史 `ui-adjudications/` 与模块根目录同名文件，**不能因路径不同当成无记录**）与代码里的 `来源：` / `覆盖：` / `对齐：` / `ADJ-` 注释，并先输出改动清单。命中 bug/产品覆盖时按该 skill 的 `references/source-conflict-adjudication.md` 判定，不得默认按设计稿回改，也不得默认保留现状；交付说明必须分“改了 / 按裁决保留 / 差异未处理 / 待裁决”四类。业务规则（需求文档 / 接口行为 / bug 单 / 产品口述互相冲突）走同一文件的附录 B：命中 `规则覆盖` 或 `口径澄清` 时同样先登记再改，条目用 `RULE-` ID，验收必须给单测/用例。
 13. 改动触及 UI 渲染、列表、图片、启动、主线程、下载/网络热路径时，读 `aaaaa-xxf-android-performance-gate`。
-14. 方案不确定、结论冲突、技术选型分歧、业务规则无法从代码事实推导，或用户目标与架构/发布/兼容约束冲突时，读 `aaaaa-xxf-clarify-question`，先让用户抉择，并把决策记录到对应模块的 `vibe-coding-clarify.md`。
+14. 方案不确定、结论冲突、技术选型分歧、业务规则无法从代码事实推导，或用户目标与架构/发布/兼容约束冲突时，读 `aaaaa-xxf-clarify-question`，先让用户抉择，并把决策记录到对应模块的 `docs/vibe-coding-clarify/vibe-coding-clarify.md`。
 
 ## 验证优先级
 
@@ -46,7 +46,7 @@ description: 处理 Android 项目中的通用编码任务交付流程。用于 
 - 存在多个可行实现，且选择会影响 API、兼容性、发布、依赖方向、验证范围或后续维护成本
 - 用户目标与现有架构边界、optional 模块拆分、隐私权限、性能要求或发布策略冲突
 
-进入澄清时，按 `aaaaa-xxf-clarify-question` 输出用户决策 prompt；用户确认后写入对应模块的 `vibe-coding-clarify.md` 再继续实现。
+进入澄清时，按 `aaaaa-xxf-clarify-question` 输出用户决策 prompt；用户确认后写入对应模块的 `docs/vibe-coding-clarify/vibe-coding-clarify.md` 再继续实现。
 
 ## 输出要求
 

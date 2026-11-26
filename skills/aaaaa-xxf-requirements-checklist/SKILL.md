@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-requirements-checklist
-description: 需求核查与对齐。当用户说"对齐需求""核查需求""实现核查""核对哪些没做到""整理问题清单""缺资源""待澄清""按编号处理""继续第 N 项""清单还剩什么"等时使用。对照需求文档、设计稿、接口与实际实现，生成并维护 <需求名>-实现核查问题清单.md，固定四类表格（确定问题、待澄清/缺结论、缺资源/外部依赖、必要的待验证项），编号跨表唯一、跨轮不变，解决后删行不重排编号；多轮修复与确认按 references/multi-round-loop.md 核验后再删行，澄清答复先记录决策再实现。
+description: 需求核查与对齐。当用户说"对齐需求""核查需求""实现核查""核对哪些没做到""整理问题清单""缺资源""待澄清""按编号处理""继续第 N 项""清单还剩什么"等时使用。对照需求文档、设计稿、接口与实际实现，生成并维护 <需求名>-实现核查问题清单.md，固定四类表格（确定问题、待澄清/缺结论、缺资源/外部依赖、必要的待验证项），编号跨表唯一、跨轮不变，解决后删行不重排编号；多轮修复与确认按 references/multi-round-loop.md 核验后再删行，澄清答复先记录决策再实现；设计稿与已有 bug/产品 UI 覆盖冲突时纳入待澄清并链接裁决记录。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -28,8 +28,8 @@ description: 需求核查与对齐。当用户说"对齐需求""核查需求""�
 
 ## 边界与授权
 
-- 与 `aaaaa-xxf-clarify-question` 分工：本 skill 管理清单中的待澄清项；用户答复后的决策记录按 clarify-question 规则写入主责模块的 `vibe-coding-clarify.md`。
-- 纯视觉对稿走 `aaaaa-xxf-ui-design-alignment`；只有"需求是否要求该控件"这类判断回到本 skill。
+- 与 `aaaaa-xxf-clarify-question` 分工：本 skill 管理清单中的待澄清项；用户答复后的决策记录按 clarify-question 规则写入主责模块的 `docs/vibe-coding-clarify/vibe-coding-clarify.md`。
+- 纯视觉对稿走 `aaaaa-xxf-ui-design-alignment`；只有"需求是否要求该控件"这类判断回到本 skill。设计稿、需求文档与 bug/产品覆盖值冲突时，先按 `aaaaa-xxf-ui-design-alignment/references/source-conflict-adjudication.md` 判定范围（UI 走正文，业务规则走附录 B）和是否已有裁决；未决事项入待澄清表，已有裁决的取值/行为不得按来源文档字面回改。
 - 确定问题获授权修复后的构建、测试、审查按项目交付流程（如 `aaaaa-xxf-delivery-loop`）执行；不因纯文档核查无差别要求全量构建或发布。
 - "只核查、列问题"不授权修改业务代码；"确定的没做到就补齐"授权继续实现确定项，无需逐条重复确认。授权范围不明时，在首轮回复末尾用一句话确认（直接修确定项 / 只出清单），不默默二选一。
 - 未决事项只阻塞依赖该结论的部分，其余已授权工作继续。

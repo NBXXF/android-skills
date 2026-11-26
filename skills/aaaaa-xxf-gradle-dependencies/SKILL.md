@@ -193,6 +193,6 @@ When this skill is used on a real repo, report:
 - whether Android SDK versions are centralized in root `gradle.properties`
 - whether reusable non-secret build configuration is centralized in root `gradle.properties`
 - whether publish credentials/signing secrets are externalized through Gradle properties without committed secret values
-- for publishable Maven library changes: the user's AskUserQuestion confirmation result from the 职责收尾 gate, and the `vibe-coding-clarify.md` path if residual risks were accepted
+- for publishable Maven library changes: the user's AskUserQuestion confirmation result from the 职责收尾 gate, and the `docs/vibe-coding-clarify/vibe-coding-clarify.md` path if residual risks were accepted
 - whether the repo is fully catalog-driven or still in migration
 - any unresolved legacy usage that requires follow-up

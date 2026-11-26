@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-ui-design-alignment
-description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、文字适配（优先用共享组件 `AutoFitText`，同类问题组件化收口，禁止逐页手写 `autoSize`）、单行标题/名称与限行多行文本（如最多 3 行）的宽度适配（先吃满可用空间、再按语义自动缩字号、最后省略或换行兜底，禁止写死宽度上限、禁止固定高度裁字）、单行文本在有界容器内的垂直居中（背景/描边/圆角容器内的标题、输入框、标签，禁止靠 padding 手调、禁止 BasicTextField 文本顶格）、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核。
+description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack Compose 布局。用于根据 Figma、Figama、MasterGo、蓝湖、摹客或截图实现/修复 Compose 页面 UI 时，要求像素级视觉对齐、不同窗口尺寸适配（window size class 断点、平板、折叠屏、edge-to-edge、Grid/FlexBox/mediaQuery）、动态内容适配、文字适配（优先用共享组件 `AutoFitText`，同类问题组件化收口，禁止逐页手写 `autoSize`）、单行标题/名称与限行多行文本（如最多 3 行）的宽度适配（先吃满可用空间、再按语义自动缩字号、最后省略或换行兜底，禁止写死宽度上限、禁止固定高度裁字）、单行文本在有界容器内的垂直居中（背景/描边/圆角容器内的标题、输入框、标签，禁止靠 padding 手调、禁止 BasicTextField 文本顶格）、Lazy 列表/瀑布流/网格适配、字体缩放、WindowInsets 安全区、图片比例、空/错/加载态和截图复核；以及设计稿、需求文档、bug 单、产品口述、现有实现多来源冲突时的裁决（UI 取值与业务规则两类画像）、登记表、证据落库、追溯链路和用户裁决流程。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -19,6 +19,29 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 4. 只有截图或口述时，先声明哪些值是推断值，并优先使用现有项目样式、dimens、主题 token 和邻近页面规范。
 5. 存在 Figma/MasterGo 工具能力时，优先获取节点截图或 DSL/metadata，并在实现后用运行截图对照。
 6. 编写 Compose UI 前，先按下方“图标与图片资源导出”规则获取设计稿原始资源；节点截图只用于对照，不能代替资源导出。
+7. 设计稿不是唯一真值：同一属性存在已记录的 bug/产品覆盖时，先按下一节判定，不要直接按设计值回改。
+
+## 设计值 vs bug/产品覆盖值（强制）
+
+UI 属性可能来自设计稿，也可能来自 bug 单、产品口述、聊天截图或飞书链接；设计稿经常不会回头更新。
+
+**不存在“设计稿优先”或“bug 优先”这类全局规则。** 一条铁律决定写入范围，一条决定取值来源，一条决定什么时候必须停下来问。
+
+### 三条铁律
+
+1. **写入集合 = 本次点名范围**：一次任务只改本次请求明确点名的属性（属性名、圈选、Dev Mode 标注、明确数值）。设计稿里看得见但没点名的属性，即使与代码不一致也**不许改**；只写进交付差异清单。只有两种情况扩大范围：首次实现（base 分支不存在该 UI）、明确说“整块按新稿重做”——后者扩到整块，但冲突属性仍需逐个裁决。
+2. **生效值只能来自已登记裁决**：要么本次请求明确给出该属性的目标值，要么该属性在 `<module>/docs/vibe-coding-clarify/REGISTRY.md` 中有状态=生效且范围匹配的条目（未迁移的模块，历史 `ui-adjudications/` 与模块根目录同名文件同样算记录）。代码现状、git 历史、相邻页面、截图目测都不产生生效值；**禁止先改代码再补记录**。
+3. **无记录的不一致 = 未决冲突 = 必须问**：查不到记录时，不默认按设计改，也不默认保留代码值。该属性置为待裁决，禁止落代码。
+
+### 执行要求
+
+1. 动手前先输出**改动清单**（属性 | 设计值 | 代码现状 | 生效记录 | 处理 | 依据），处理只能取：按设计改 / 按本次要求改 / 按记录保留 / 仅报告不改 / 无需改动 / 待裁决；清单外的属性不得改动。
+2. 改 bug 时：代码注释写 `bug单` 或 `产品裁决` 并带条目 ID，不能把覆盖值写成“设计值”；截图落库到 `<module>/docs/vibe-coding-clarify/evidence/<component>/`，`REGISTRY.md` 加行，`vibe-coding-clarify.md` 写背景并引用 ID。
+3. 后续贴设计图改同组件其他属性：先检索 REGISTRY 与代码里的 `来源：` / `覆盖：` / `ADJ-` 注释，只改点名属性，旧裁决保留。
+4. 同一属性设计值与生效裁决不一致，且本次没给出该属性的明确目标值：该属性暂停，批量列“保留 / 采用新设计 / 分状态并存”让用户裁决，先记录再实现；本次已给出明确值的直接按该值执行并登记。
+5. 交付必须分四类说明：改了 / 按裁决保留 / 有差异但未处理 / 待裁决。只写“已按设计稿对齐”视为未交付。
+
+判定表、冲突形态清单、登记表 schema、注释模板、批量提问模板、反模式见 `references/source-conflict-adjudication.md`。业务规则（需求/bug/口述冲突）走同一份文件的附录 B，模型与 UI 相同，只是条目换成"触发条件 + 判定条件 + 预期行为 + 范围"。
 
 ## 像素对齐规则
 
@@ -84,6 +107,8 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 - 做窗口尺寸断点分支、平板/横屏/折叠屏/多窗口布局、导航容器选型（Bar/Rail/Drawer）、canonical layouts、edge-to-edge、大屏 manifest 决策或多窗口验证矩阵时，读取 `references/compose-adaptive-window-standards.md`。
 - 做 Compose 页面、复杂列表、弹窗、横屏/平板/折叠屏、多窗口、键盘、RTL、深色模式或无障碍适配，以及组件横/纵排布尺寸、相对定位叠层、文字超长、单行标题/名称宽度适配（先吃满空间→缩字号→兜底）、多行限行（maxLines = N）适配、单行文本垂直居中、图片缩放等适配决策时，读取 `references/compose-adaptation-scenarios.md`。
 - 实现文本、图片、按钮、标签、输入框、卡片、Lazy item 等会受内容影响的组件时，读取 `references/compose-dynamic-layout-decisions.md`。
+- 贴新设计图改已有组件、bug 单/产品要求覆盖设计稿、需要判断“这个字号/间距到底听谁的”时，读取 `references/source-conflict-adjudication.md`。
+- 需求文档、bug 单、产品口述、现有实现在同一条业务规则上不一致，需要判断“这条规则到底按哪个”时，读同一文件的附录 B 与 §5/§6.2。
 
 ## Compose 动态布局原则
 
@@ -118,6 +143,27 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 3. 语义上已是另一类组件（描边艺术字、带图标或富文本的金额、格宽由内容反推的网格）→ 抽新组件放共享层，复用同一套策略，不要复制粘贴后各改各的。
 
 **反模式（评审直接打回）**：业务代码里出现 `TextAutoSize.StepBased`；同一套策略在 2 个以上文件各写一份；用固定高度 + `clip` 裁字；用常量 `widthIn(max = …)` 提前截断；为单页问题复制一个组件副本。审查时先跑 `grep -rn "TextAutoSize" --include=*.kt <模块>`，业务模块命中且不在组件内部，基本就是没收口。
+
+### 字号冻结（FixedFontScale）的包裹粒度
+
+产品裁决「App 内字号恒定、不跟随系统字体大小」时，用 `com.xxf.compose.ui.font.FixedFontScale`（在 `xxf_android/core/lib_compose`）把 `LocalDensity.fontScale` 钉成 1f，屏幕密度不变。
+
+**包裹粒度是「每个 window 一份」，不是「每个 App 一份」**：
+
+| 位置 | 是否必须 |
+| --- | --- |
+| Activity / Fragment 的 `setContent {}` 根、主题（如 `OverseaReelsTheme`） | 必须 |
+| 每个 `Dialog` / `AlertDialog` / `DialogFragment` 的内容 | 必须 |
+| 每个 `Popup` / `DropdownMenu` / `ModalBottomSheet` 的内容 | 必须 |
+| 手动 addView 到 window 的 `ComposeView` | 必须 |
+| 同一个 Composition 内再包一层 | 无害但冗余，可以删 |
+
+原因：Dialog / Popup / BottomSheet **不在宿主 Composition 里绘制内容**——它们各自创建 window 和新的 `ComposeView`（子组合），Compose 会按该 window 的 `Configuration` 重新 `provide LocalDensity`，外层的冻结传不进去。
+
+- `AlertDialog` 的 `title` / `text` / `confirmButton` / `dismissButton` 是四个独立 lambda，都在 Dialog 子组合里执行、由 Material3 分别 measure → 必须**逐槽包裹**；在 `AlertDialog(...)` 外面套一层没有效果。
+- **看到弹窗里有「重复」的 `FixedFontScale` 不要当冗余删掉**，删了立刻出现「页面字号正常、弹窗字号跟着系统放大」。（2026-11-19 实测：Activity 根包了、Dialog 里没包，两者不一致。）
+- 冻结后 `dp.toSp()` 与 `dp.value` 数值相同，原本用 `dp.toSp()` 做「物理尺寸封顶」的写法语义会变，要重新核对。
+- 预览里用 `LocalDensity provides Density(d, 1.3f)` 模拟大字体时，若宿主已冻结，`*-font` 场景会静默失效——验证大字体要改系统 `font_scale` 在真机上看。
 
 ### 单行标题与名称的宽度适配（默认策略）
 
@@ -200,6 +246,9 @@ description: Android 项目的 Android UI 设计稿对齐规范，侧重 Jetpack
 实现后至少做以下检查，并在最终说明里报告结果或阻塞原因：
 
 - 设计稿基准尺寸和目标机型宽度是否明确。
+- 是否先输出了改动清单，且实际改动没有超出清单；清单里的“按记录保留 / 仅报告不改 / 无需改动”是否原样执行。
+- 改值前是否检索 `docs/vibe-coding-clarify/REGISTRY.md` 与代码 `来源：` / `覆盖：` / `ADJ-` 注释；设计值与生效裁决冲突时是否先裁决再实现；本次未点名的裁决值是否保留；覆盖值注释是否带条目 ID，是否与“设计值”区分。
+- 交付说明是否分“改了 / 按裁决保留 / 差异未处理 / 待裁决”四类，是否列出设计稿与实现的剩余差异。
 - 默认机型截图与设计稿关键间距、尺寸、颜色、字号是否对齐。
 - 图标和图片是否来自原始设计节点，是否记录 SVG 转 XML 或 3x PNG 的选型及资源路径，目录与密度是否正确。
 - 缺失或无法导出的资源是否在对应代码位置添加了说明用途、设计节点、预期资源路径和待办事项的 TODO，且未引入不存在的资源引用。

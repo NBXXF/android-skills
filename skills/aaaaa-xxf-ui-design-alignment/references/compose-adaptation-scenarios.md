@@ -279,7 +279,7 @@ BasicText(
 
 ## 适配验证防坑（实测结论）
 
-- `Dialog`/`Popup` 是独立 window：外层 `CompositionLocalProvider(LocalDensity provides …, fontScale=…)` 不会传入弹窗内容（弹窗用自己的配置派生密度）。预览宿主里"xx-font 场景"对弹窗类组件可能根本没生效——用 `settings put system font_scale` 改系统字体做真实验证，测完恢复原值；用 pixel-diff（`ImageChops.difference` 的 bbox 只落在状态栏 = 场景没生效）确认测试路径有效。
+- `Dialog`/`Popup` 是独立 window：外层 `CompositionLocalProvider(LocalDensity provides …, fontScale=…)` 不会传入弹窗内容（弹窗用自己的配置派生密度）。**这不是测试特例，生产代码同理**：每个 Dialog/Popup/BottomSheet 的内容都要再包一次 `FixedFontScale`，`AlertDialog` 的四个槽要逐槽包（详见 SKILL.md「字号冻结的包裹粒度」）。预览宿主里"xx-font 场景"对弹窗类组件可能根本没生效——用 `settings put system font_scale` 改系统字体做真实验证，测完恢复原值；用 pixel-diff（`ImageChops.difference` 的 bbox 只落在状态栏 = 场景没生效）确认测试路径有效。
 - offset 与 padding 的测量语义差异是相对定位第一大坑：offset 不改变父容器对子项的测量结果，padding 会。涉及兄弟排布的位置用 padding/alignment，纯装饰微调用 offset。
 - 文本放进硬宽度约束的盒子时，`maxLines=1` 会在约束边缘直接裁字（不是溢出显示）；单 token 内容要么给足空间，要么 TextAutoSize。
 - 部位级核对：整图视觉检查容易漏"小字压在按钮上"级别的缺陷；按关键交界裁剪放大（PIL crop + resize）逐项确认，"金额每个字符完整""链接与按钮有明确间隙"这类可判定的问法比"布局正常吗"可靠。

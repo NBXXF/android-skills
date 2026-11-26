@@ -1,6 +1,6 @@
 ---
 name: aaaaa-xxf-clarify-question
-description: Android 项目编码任务中的澄清与用户决策记录流程。用于方案不确定、结论冲突、技术选型分歧、业务规则无法从代码事实推导时，先提示用户抉择，并把决策记录到对应模块的 vibe-coding-clarify.md。
+description: Android 项目编码任务中的澄清与用户决策记录流程。用于方案不确定、结论冲突、技术选型分歧、业务规则无法从代码事实推导时，先提示用户抉择，并把决策按模块归档到 `<module>/docs/vibe-coding-clarify/vibe-coding-clarify.md`；设计稿、需求文档、bug 单、产品口述、接口行为对同一 UI 取值或业务规则给出不同答案时也必须进入裁决记录。
 ---
 
 > 备注：此 skill 来自 https://github.com/NBXXF/android-skills，请不要手动修改！新增或维护本工程内的 skill 时也必须保留此备注规则，方便其他业务引用方识别来源。
@@ -17,6 +17,8 @@ description: Android 项目编码任务中的澄清与用户决策记录流程�
 - 技术选型：需要在新依赖、自研实现、复用现有模块、optional 模块拆分、`api`/`implementation`/`compileOnly` 暴露方式之间选择。
 - 产品/业务规则：正确答案属于业务策略、产品预期、线上兼容策略，而不是能从仓库代码直接推导的事实。
 - 日期/时间展示：展示格式缺少明确需求、设计稿或用户确认依据，或示例存在歧义时，必须先澄清；按 `aaaaa-xxf-android-i18n-strings` 的“日期与时间展示格式”执行，禁止用现有工具默认值、系统 Locale 或其他页面格式代替需求。
+- UI 取值冲突：设计稿与 bug 单、产品口述、聊天截图或飞书链接对同一属性给出不同值；设计稿更新后与已登记覆盖值不同；或代码值与设计值不一致却查不到来源。按 `aaaaa-xxf-ui-design-alignment` 的 `references/source-conflict-adjudication.md` 判定范围，**不默认任一方**：无记录即冲突，先问后改。
+- 业务规则冲突：需求文档、bug 单、产品口述、接口实际行为对同一规则的触发条件、判定条件或预期行为给出不同答案；需求没写而实现已有一套默认行为；需求改版只改了一处、相邻规则没同步。按同一文件的附录 B 判定，**不默认“需求优先”“线上为准”或“接口优先”**。
 
 不因为轻微命名、局部实现细节、无行为差异的小重构而打断用户；这类问题按仓库既有风格自行判断。
 
@@ -28,6 +30,8 @@ description: Android 项目编码任务中的澄清与用户决策记录流程�
 - 影响：不同选择会影响哪些模块、API、兼容性、验证或发布风险。
 - 选项：给出 2-3 个互斥选项，并标出推荐项及理由。
 - 默认处理：如果用户不想深入，说明建议选择哪个方案。
+
+**UI 取值冲突是唯一例外**：不得给"默认/建议按某一方"的兜底。用户不表态时保持现状、该属性不落代码，下次对稿继续按未决处理；理由是任一默认都会在无人确认的情况下改写已生效的取值决定。
 
 提问模板：
 
@@ -42,16 +46,29 @@ description: Android 项目编码任务中的澄清与用户决策记录流程�
 2. ...：...
 3. ...：...
 
-我建议选 ...，因为 ...。确认后我会继续实现，并记录到 <module>/vibe-coding-clarify.md。
+我建议选 ...，因为 ...。确认后我会继续实现，并记录到 <module>/docs/vibe-coding-clarify/vibe-coding-clarify.md。
 ```
+
+（UI 取值冲突时删掉"我建议选…"这句，只列选项和影响面。）
 
 ## 记录位置
 
-- 单模块问题：记录到受影响 Gradle 模块根目录的 `vibe-coding-clarify.md`。
-- demo/sample 问题：记录到其所属发布 library 模块；只有 demo 行为本身才记录在 demo 模块根目录。
-- optional 模块问题：记录到对应 `optional/...` 模块根目录。
-- 跨模块问题：记录到主责模块根目录，并在 `影响范围` 写明其他模块。
-- 仓库级构建、发布、Gradle、聚合库问题：记录到仓库根目录的 `vibe-coding-clarify.md`。
+**统一按模块归档到一个目录，不要把记录散在模块根目录。**
+
+```text
+<module>/docs/vibe-coding-clarify/
+├── vibe-coding-clarify.md           # 决策记录（按时间倒序）
+├── REGISTRY.md                      # 取值与规则裁决登记表（ADJ- / RULE-，有裁决时才建）
+└── evidence/<component|rule>/*      # 证据：UI 截图、需求章节、接口样本、用例
+```
+
+- 单模块问题：`<module>/docs/vibe-coding-clarify/vibe-coding-clarify.md`。
+- demo/sample 问题：记录到其所属发布 library 模块的同一路径；只有 demo 行为本身才记录在 demo 模块下。
+- optional 模块问题：记录到对应 `optional/<module>/docs/vibe-coding-clarify/vibe-coding-clarify.md`。
+- 跨模块问题：记录到主责模块该目录，并在 `影响范围` 写明其他模块。
+- 仓库级构建、发布、Gradle、聚合库问题：`<repo>/docs/vibe-coding-clarify/vibe-coding-clarify.md`。
+
+迁移约定：模块根目录若已有旧 `vibe-coding-clarify.md`，搬进 `docs/vibe-coding-clarify/` 并同步所有指向它的路径；不要留两份。
 
 ## 记录格式
 
@@ -62,6 +79,7 @@ description: Android 项目编码任务中的澄清与用户决策记录流程�
 
 ## YYYY-MM-DD - 简短标题
 
+- 来源：<缺陷单号/需求文档章节/聊天或口述 + 提出人 + 日期>
 - 任务背景：
 - 不确定点：
 - 候选方案：
@@ -74,16 +92,35 @@ description: Android 项目编码任务中的澄清与用户决策记录流程�
 - 后续验证：
 ```
 
+`来源` 是追溯入口，必须能回到原始诉求；没有单号的口述写"口述 + 提出人 + 日期"，不要留空。
+
 同一问题后续有补充决策时，在原记录下追加：
 
 ```markdown
 - 补充决策（YYYY-MM-DD）：
 ```
 
+**标题是代码注释和其他文档的引用锚点**：`## YYYY-MM-DD - 简短标题` 写定后不要改名、不要改日期；内容有更新就追加“补充决策”，保证旧引用始终能定位。取值/行为裁决另用 `ADJ-<模块>-<序号>`（UI）或 `RULE-<模块>-<序号>`（业务规则）做条目 ID，见 `aaaaa-xxf-ui-design-alignment/references/source-conflict-adjudication.md`。
+
+## 取值与行为裁决记录（强制）
+
+当 bug 单、产品口述或评审结论改变了**设计稿的 UI 值**或**需求文档规定的业务行为**，而来源文档不回改时，除普通决策字段外还必须记录：
+
+1. **来源类型**：`bug单` / `产品裁决` / `需求评审` / `口述`，不能写“设计值”“需求要求”。`需求评审` 要带会议日期与结论摘要。
+2. **条目粒度**：UI 按“组件/区域 + 属性 + 范围（页面/variant/状态/语言/字倍/主题）”；业务规则按“触发条件 + 判定条件 + 预期行为 + 范围（端/版本/用户状态/开关）”，**一个分支一行**，不要把整条链路写成一行。
+3. **登记**：在 `<module>/docs/vibe-coding-clarify/REGISTRY.md` 增加一行，UI 分配 `ADJ-<模块>-<序号>`、业务分配 `RULE-<模块>-<序号>`，该表是唯一权威。类型取 `值覆盖` / `规则覆盖` / `口径澄清` / `行为约束`。模块尚未迁移时先把旧记录并进新路径再登记，不要在 `ui-adjudications/` 或模块根目录继续追加。
+4. **证据**：UI 存截图；业务存需求章节截图、缺陷单、接口响应样本、用例或单测路径。统一放 `<module>/docs/vibe-coding-clarify/evidence/<component|rule>/`。
+5. **对齐约束**：明确“未获产品确认前不得回改哪些属性/行为”，供后续对稿先检索。
+6. **代码注释**：在取值处或规则分支紧邻位置写条目 ID、来源、基准 → 生效值、范围和裁决路径，格式按 `aaaaa-xxf-comment-guidelines`。
+
+询问口径：**不存在“设计稿优先”“bug 优先”“PRD 优先”“线上为准”的默认答案**。提问必须同时给出基准值、生效值、范围、来源和影响面，并允许“分状态/分端并存”。禁止用“本次是设计对稿所以按设计稿”“之前有 bug 单所以保持现状”“接口就是这么返回的”作为默认选项推荐给用户。
+
+详细判定表、冲突形态清单（UI 与业务各一组）、批量提问模板见 `aaaaa-xxf-ui-design-alignment/references/source-conflict-adjudication.md`。用户明确采用新值时，在原记录下追加补充决策、更新 REGISTRY 状态并同步代码注释，不删除历史行。
+
 ## 执行要求
 
 1. 先完成本地事实核查，不把能从代码、Gradle 配置、测试或现有 skill 判断的问题丢给用户。
 2. 需要用户决策时，暂停实现风险相关部分，发出澄清 prompt。
-3. 用户确认后，先把决策写入对应 `vibe-coding-clarify.md`，再继续编码。
+3. 用户确认后，先把决策写入对应模块的 `docs/vibe-coding-clarify/vibe-coding-clarify.md`，再继续编码。
 4. 最终交付说明中列出已记录的 clarify 文件路径和决策摘要。
 5. 如果用户明确要求不要记录，最终说明中必须标出“未记录用户决策”的残余风险。

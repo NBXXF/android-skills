@@ -35,7 +35,7 @@ description: Android Google Play 上架审核合规门禁。用于新增、维�
    - `Pass`：未发现当前范围内的 Play 审核风险。
 5. 决策与记录：
    - 对既有问题代码，先给出推荐修法和影响；如果修复会影响业务功能/API/兼容性，必须询问用户是否修改。
-   - 用户确认后，按 `aaaaa-xxf-clarify-question` 记录到对应模块 `vibe-coding-clarify.md`，再编码。
+   - 用户确认后，按 `aaaaa-xxf-clarify-question` 记录到对应模块 `docs/vibe-coding-clarify/vibe-coding-clarify.md`，再编码。
 6. 修复闭环：
    - 做最小正确改动。
    - 加必要注释，必须包含类似“为了合规和 Google Play 应用市场审核，必须...”的原因。
@@ -67,7 +67,7 @@ description: Android Google Play 上架审核合规门禁。用于新增、维�
 2. <方案 B>：<优缺点>
 3. 暂不修改：<残余审核风险>
 
-确认后我会把决策记录到 <module>/vibe-coding-clarify.md，再继续修改。
+确认后我会把决策记录到 <module>/docs/vibe-coding-clarify/vibe-coding-clarify.md，再继续修改。
 ```
 
 用户已经明确要求“全部按审核合规改”“只管发布库”“demo 不管”这类范围时，可以在该范围内直接修复明确 blocker；仍要在最终说明里写清破坏兼容或业务行为变化。
